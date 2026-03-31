@@ -1,0 +1,14 @@
+{
+    
+    "cabinet": {
+        "cabinet_no": "1",
+        "name": "ToolingBoard",
+        "title": "ToolingBoard Test",
+		"language": "Cn"
+    },
+    
+    "serial_info": {
+        "baudrate": "115200",
+        "serial_port_name": "COM4"
+    }
+}

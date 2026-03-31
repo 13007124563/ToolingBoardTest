@@ -1,0 +1,1507 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>BackendWnd</class>
+ <widget class="QWidget" name="BackendWnd">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1280</width>
+    <height>710</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">#BackendWnd
+{
+	background: transparent;
+	background-color: #FFFFFF;
+}
+
+QLable
+{
+	background: transparent;
+}
+
+#widget_bk
+{
+	background-color: #E9F2F8;
+}
+
+#stackedWidget_bk
+,#page_sel
+,#page_record
+,#page_advance
+
+{
+	background: transparent;
+/*	background-color: #ffffff;*/
+}</string>
+  </property>
+  <widget class="QWidget" name="widget_bk" native="true">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>10</y>
+     <width>1280</width>
+     <height>668</height>
+    </rect>
+   </property>
+   <widget class="QStackedWidget" name="stackedWidget_bk">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>1280</width>
+      <height>668</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>1280</width>
+      <height>668</height>
+     </size>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>1280</width>
+      <height>668</height>
+     </size>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QLabel
+{
+	font: 18pt &quot;微软雅黑&quot;;
+	color: #005FA7;
+}
+
+QLabel:disabled
+{
+	color: #CDCDCD;
+}
+
+QComboBox {
+	border: 1px solid #BBBBBB;
+	border-radius: 5px;
+	padding-left: 10px;
+	
+	font: 16pt &quot;微软雅黑&quot;;
+	color: #005FA7;
+	background: transparent;
+}
+
+QComboBox::disabled 
+{
+	border: 1px solid #999999;
+	border-radius: 5px;
+	padding: 2px;
+	font: 16pt &quot;微软雅黑&quot;;
+	color: #999999;
+	background: transparent;
+}
+
+QComboBox:focus, QComboBox:hover {
+	border: 1px solid #008bcc;
+}
+
+QComboBox::drop-down {
+	width: 32px;
+	border: none;
+	background: transparent;
+}
+
+QComboBox::down-arrow {
+	width: 14px;
+	height: 8px;
+	border-image: url(:/img/backend/icon-up.png);
+}
+
+QComboBox QAbstractItemView
+{
+     border: 1px solid rgb(161,161,161);
+}
+ 
+QComboBox QAbstractItemView::item
+{
+    height: 60px;
+}
+ 
+QComboBox QAbstractItemView::item:selected
+{	
+    background-color: rgba(54, 98, 180);
+}
+
+
+
+QDateEdit {
+	border: 1px solid #BBBBBB;
+	border-radius: 5px;
+	font: 14pt &quot;微软雅黑&quot;;
+	color: #005FA7;
+	padding: 2px;
+	background: transparent;
+}
+
+QDateEdit:focus, QDateEdit:hover {
+	border: 1px solid #008bcc;
+}
+
+QDateEdit::drop-down {
+	width: 32px;
+	border: none;
+	background: transparent;
+}
+
+QDateEdit:down-arrow {
+	width: 14px;
+	height: 8px;
+	border-image: url(:/img/backend/icon-up.png);    
+}
+
+QDateEdit
+{
+	padding-left: 10px;
+}
+
+#scrollArea{
+	border: 1px solid #999999;
+	background:transparent;
+}
+
+QPushButton
+{
+	border: none;
+	border-radius:5px;
+	background-color:#005FA7;
+	
+	font: 16pt &quot;微软雅黑&quot;;
+	color:#FFFFFF;
+}
+
+QPushButton:pressed
+{
+	background-color:#74a8cf;
+}
+
+QPushButton:disabled
+{
+	background-color:#999999;
+}
+
+QTableView {
+	padding: 3px;
+	border: 1px solid #999999;
+	border-radius: 1px;
+	background: transparent;
+/*	background: #FFF;*/
+
+	font: 16pt &quot;微软雅黑&quot;;
+	color: #333333;
+
+	selection-color: #333333; 
+	selection-background-color:#7FAFD3;
+}
+
+QTableView:focus, QTableView:hover {
+	border: 1px solid #008bcc;
+}
+
+QTableView QAbstractItemView::item {
+	padding-left: 6px;
+}
+
+QTableView QHeaderView {
+	border: 1px solid #999999;
+	background: transparent;
+}
+
+QTableView QHeaderView::section{
+	border: 1px solid #999999;
+	height:40px;
+	color: #FFFFFF;
+        font: 12pt &quot;微软雅黑&quot;;
+        background-color:#9fa9b6;
+        border-bottom: 1px solid #eaeaea;
+        padding-left: 6px;
+}
+
+QLineEdit:focus, QLineEdit:hover {
+	border: 1px solid #008bcc;
+}
+
+QLineEdit:disabled
+{
+	color: #CDCDCD;
+}
+
+/* combobox 滑动条*/
+QComboBox QScrollBar:vertical
+{
+    width:60px;
+    margin:0px,0px,0px,0px;
+	border-image: url(:/img/scroll_bar_large/v/bg.png);
+    padding-top:55px;
+    padding-bottom:55px;
+}
+
+QComboBox QScrollBar::handle:vertical
+{
+    width:40px;
+
+    min-height:20px;
+	margin:0px 10px 0px 10px;
+	
+	border-image: url(:/img/scroll_bar_large/v/thumb_up.png);
+}
+
+QComboBox QScrollBar::handle:vertical:hover
+{
+	border-image: url(:/img/scroll_bar_large/v/thumb_click.png);
+}
+
+QComboBox QScrollBar::handle:vertical:pressed
+{
+	border-image: url(:/img/scroll_bar_large/v/thumb_down.png);
+}
+
+QComboBox QScrollBar::sub-line:vertical
+{
+	border-radius: 2px;
+	width:55px;
+    height:55px;
+	
+	border-image: url(:/img/scroll_bar_large/v/btn_down_up.png);
+	subcontrol-position: top;
+}
+
+QComboBox QScrollBar::sub-line:vertical:hover
+{
+	border-image: url(:/img/scroll_bar_large/v/btn_down_click.png);
+}
+
+QComboBox QScrollBar::sub-line:vertical:pressed
+{
+	border-image: url(:/img/scroll_bar_large/v/btn_down_down.png);
+}
+
+QComboBox QScrollBar::add-line:vertical
+{
+	border-radius: 2px;
+
+	width:55px;
+    height:55px;
+	
+	border-image: url(:/img/scroll_bar_large/v/btn_up_up.png);
+    subcontrol-position:bottom;
+}
+
+QComboBox QScrollBar::add-line:vertical:hover
+{
+	border-image: url(:/img/scroll_bar_large/v/btn_up_click.png);
+}
+
+QComboBox QScrollBar::add-line:vertical:pressed
+{
+	border-image: url(:/img/scroll_bar_large/v/btn_up_down.png);
+}
+
+QComboBox QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical
+{
+    border-width:1px;
+}
+
+
+QComboBox QScrollBar:horizontal 
+{
+    height:60px;
+    margin:0px,0px,0px,0px;
+	border-image: url(:/img/scroll_bar_large/h/bg.png);
+    background:rgba(0,0,0,0%);
+    padding-left:55px;
+    padding-right:55px;
+}
+
+QComboBox QScrollBar::handle:horizontal 
+{
+    height:40px;
+    min-width:20px;
+	margin:10px 0px 10px 0px;
+	border-width:2px;
+	
+	border-image: url(:/img/scroll_bar_large/h/thumb_up.png);
+}
+
+QComboBox QScrollBar::handle:horizontal:hover
+{
+	border-image: url(:/img/scroll_bar_large/h/thumb_click.png);
+}
+
+QComboBox QScrollBar::handle:horizontal:pressed
+{
+	border-image: url(:/img/scroll_bar_large/h/thumb_down.png);
+}
+
+QComboBox QScrollBar::sub-line:horizontal
+{
+	border-radius: 2px;
+	width:55px;
+    height:55px;
+	
+	border-image: url(:/img/scroll_bar_large/h/btn_left_up.png);
+	subcontrol-position: left;
+}
+
+QComboBox QScrollBar::sub-line:horizontal:hover
+{
+	border-image: url(:/img/scroll_bar_large/h/btn_left_click.png);
+}
+
+QComboBox QScrollBar::sub-line:horizontal:pressed
+{
+	border-image: url(:/img/scroll_bar_large/h/btn_left_down.png);
+}
+
+QComboBox QScrollBar::add-line:horizontal
+{
+	border-radius: 2px;
+
+	width:55px;
+    height:55px;
+	
+	border-image: url(:/img/scroll_bar_large/h/btn_right_up.png);
+    subcontrol-position:right;
+}
+
+QComboBox QScrollBar::add-line:horizontal:hover
+{
+	border-image: url(:/img/scroll_bar_large/h/btn_right_click.png);
+}
+
+QComboBox QScrollBar::add-line:horizontal:pressed
+{
+	border-image: url(:/img/scroll_bar_large/h/btn_right_down.png);
+}
+
+QComboBox QScrollBar::add-page:horizontal,QScrollBar::sub-page:horizontal
+{
+    border-width:1px;
+}
+
+/* 日期表 */
+/*QDateEdit,QDateTimeEdit
+{
+  min-width:190px;
+  height:50px;
+  font-size: 26px;
+  background-color: white;
+  border: 1px solid #999999;
+  border-radius:2px;
+}
+
+#dateTimeEdit{
+  min-width:240px;
+}
+
+QDateEdit::drop-down,QDateTimeEdit::drop-down{
+  width: 50px;
+  border:none;     
+  image: url(:/resource/image/backstage/icon_down.png);
+}*/
+
+QCalendarWidget {
+  min-width:440px;
+  min-height:300px;
+}
+
+QCalendarWidget QWidget#qt_calendar_navigationbar {
+  background-color: #0494DB;
+}
+QToolButton#qt_calendar_monthbutton{
+  width:120px;
+}
+QToolButton#qt_calendar_yearbutton{
+  width:200px;
+}
+QCalendarWidget QToolButton {
+  height: 50px;
+  color:white;
+  font-size:26px;
+    icon-size: 50px, 50px;
+    background-color: #0494DB;
+}
+QCalendarWidget QMenu {
+    width: 160px;
+    left: 20px;
+    color: #333333;
+    font-size: 30px;
+    background-color: white;
+}
+QCalendarWidget QMenu::item:selected {
+  border-color: darkblue;
+  background: #0494DB;
+}
+
+QCalendarWidget QSpinBox,QTimeEdit { 
+    width: 130px; 
+    font-size:26px; 
+    color: white; 
+    background-color: transparent; 
+    selection-background-color: transparent;
+    selection-color: white;
+}
+QTimeEdit { 
+    width: 130px; 
+    font-size:26px; 
+    color: #333333; 
+    background-color: transparent; 
+    selection-background-color: transparent;
+    selection-color: #0494DB;
+}
+QCalendarWidget QSpinBox::up-button ,QTimeEdit::up-button{ 
+  subcontrol-origin: border;  
+  subcontrol-position: center right;  
+  width:70px; 
+}
+QCalendarWidget QSpinBox::down-button,QTimeEdit::down-button {
+  subcontrol-origin: border; 
+  subcontrol-position: center left;  
+  width:70px;
+}
+
+ 
+/* header row */
+QCalendarWidget QWidget { 
+  alternate-background-color: white; 
+}
+
+QCalendarWidget QAbstractItemView
+{
+  border:none;
+    font-size:23px;  
+  color:#333333;
+    background-color: white;  
+    selection-background-color: #0494DB; 
+    selection-color: white; 
+}
+ 
+/* days in other months */
+QCalendarWidget QAbstractItemView:disabled { 
+  color: #999999; 
+}
+
+QTimeEdit 
+{ 
+	font: 24pt &quot;微软雅黑&quot;;
+	color: #333333;
+
+	min-height: 50px;
+	max-height: 50px;
+
+    background-color: transparent; 
+
+    selection-background-color: transparent;
+    selection-color: #0494DB;
+}
+
+QTimeEdit:disabled 
+{
+	font: 24pt &quot;微软雅黑&quot;; 
+	color: #999999;
+
+    background-color: #cdcdcd;
+
+    selection-background-color: transparent;
+    selection-color: #0494DB;
+
+		
+}
+
+/*spinbox 抬起样式*/
+QTimeEdit::up-button,QDoubleSpinBox::up-button,QSpinBox::up-button {subcontrol-origin:border;
+    subcontrol-position:right;
+    image: url(:/img/icon/btn_on_right.png);
+    width: 42px;
+    height: 70px;       
+}
+QTimeEdit::down-button,QDoubleSpinBox::down-button,QSpinBox::down-button {subcontrol-origin:border;
+    subcontrol-position:left;
+    border-image: url(:/img/icon/btn_on_left.png);
+    width: 42px;
+    height: 70px;
+}
+/*按钮按下样式*/
+QTimeEdit::up-button:pressed,QDoubleSpinBox::up-button:pressed,QSpinBox::up-button:pressed{subcontrol-origin:border;
+    subcontrol-position:right;
+    image: url(:/img/icon/btn_off_right.png);
+    width: 42px;
+    height: 70px;       
+}
+  
+QTimeEdit::down-button:pressed,QDoubleSpinBox::down-button:pressed,QSpinBox::down-button:pressed{
+    subcontrol-position:left;
+    image: url(:/img/icon/btn_off_left.png);
+    width: 42px;
+    height: 70px;
+}
+
+/*按钮禁用样式*/
+QTimeEdit::up-button:disabled,QDoubleSpinBox::up-button:disabled,QSpinBox::up-button:disabled{subcontrol-origin:border;
+    subcontrol-position:right;
+    image: url(:/img/icon/btn_off_right.png);
+    width: 42px;
+    height: 70px;       
+}
+  
+QTimeEdit::down-button:disabled,QDoubleSpinBox::down-button:disabled,QSpinBox::down-button:disabled{
+    subcontrol-position:left;
+    image: url(:/img/icon/btn_off_left.png);
+    width: 42px;
+    height: 70px;
+}
+
+/*check box 样式*/
+QCheckBox {
+    spacing: 5px;
+}
+
+QCheckBox::indicator {
+    width: 42px;
+    height: 42px;
+}
+
+QCheckBox::indicator:unchecked {
+    image: url(:/img/icon/ico_Choice_off.png);
+}
+
+QCheckBox::indicator:unchecked:pressed {
+    image: url(:/img/icon/ico_Choice_down.png);
+}
+
+QCheckBox::indicator:checked {
+    image: url(:/img/icon/ico_Choice_on.png);
+}
+
+QCheckBox::indicator:checked:pressed {
+    image: url(:/img/icon/ico_Choice_Close.png);
+}
+</string>
+    </property>
+    <widget class="QWidget" name="page_sel">
+     <property name="styleSheet">
+      <string notr="true">#wnd_sel
+{
+	background:transparent;
+}
+
+#btn_page_advance
+{
+	font: 75 22pt &quot;微软雅黑&quot;;
+	color:#FFFFFF;
+
+	padding-top:120px;
+
+	background:transparent;
+	border-image: url(:/img/backend/ico_record.png);
+}
+
+#btn_page_advance:pressed
+{
+	background:transparent;
+	border-image: url(:/img/backend/ico_record_on.png);
+}
+
+#btn_page_record
+{
+	font: 75 22pt &quot;微软雅黑&quot;;
+	color:#FFFFFF;
+
+	padding-top:120px;
+
+	background:transparent;
+	border-image: url(:/img/backend/ico_set.png);
+}
+
+#btn_page_record:pressed
+{
+	background:transparent;
+	border-image: url(:/img/backend/ico_set_on.png);
+}</string>
+     </property>
+     <widget class="QWidget" name="wnd_sel" native="true">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>1280</width>
+        <height>678</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout">
+       <property name="leftMargin">
+        <number>252</number>
+       </property>
+       <property name="topMargin">
+        <number>107</number>
+       </property>
+       <property name="rightMargin">
+        <number>252</number>
+       </property>
+       <property name="bottomMargin">
+        <number>361</number>
+       </property>
+       <property name="horizontalSpacing">
+        <number>82</number>
+       </property>
+       <item row="0" column="1">
+        <widget class="QPushButton" name="btn_page_record">
+         <property name="minimumSize">
+          <size>
+           <width>200</width>
+           <height>200</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>200</width>
+           <height>200</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Record</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QPushButton" name="btn_page_advance">
+         <property name="minimumSize">
+          <size>
+           <width>200</width>
+           <height>200</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>200</width>
+           <height>200</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>Setting</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="page_record">
+     <property name="styleSheet">
+      <string notr="true">#wnd_record { background-color: #F5F5F5; }
+#wnd_record_header { background-color: #FFFFFF; border-bottom: 1px solid #E0E0E0; }
+#btn_record_back { border: none; background: transparent; font: bold 16pt &quot;微软雅黑&quot;; color: #333333; }
+#lb_record_title { font: bold 18pt &quot;微软雅黑&quot;; color: #333333; }
+#wnd_navi_type { background-color: #FFFFFF; padding-left: 20px; }
+#wnd_navi_type QToolButton { border: none; background: transparent; font: 16pt &quot;微软雅黑&quot;; color: #666666; padding-bottom: 5px; }
+#wnd_navi_type QToolButton:hover { color: #005FA7; }
+#wnd_navi_type QToolButton:checked { color: #005FA7; border-bottom: 3px solid #005FA7; font-weight: bold; }
+</string>
+     </property>
+     <widget class="QWidget" name="wnd_record" native="true">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>1280</width>
+        <height>668</height>
+       </rect>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>1280</width>
+        <height>668</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>1280</width>
+        <height>668</height>
+       </size>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QWidget" name="wnd_record_header" native="true">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>60</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>60</height>
+          </size>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_header">
+          <property name="leftMargin">
+           <number>10</number>
+          </property>
+          <property name="rightMargin">
+           <number>10</number>
+          </property>
+          <item>
+           <widget class="QPushButton" name="btn_record_back">
+            <property name="text">
+             <string>&lt;</string>
+            </property>
+             <property name="maximumSize">
+              <size>
+               <width>50</width>
+               <height>16777215</height>
+              </size>
+             </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="header_spacer_left">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="lb_record_title">
+            <property name="text">
+             <string>Test Record</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="header_spacer_right">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QWidget" name="header_placeholder_right">
+            <property name="maximumSize">
+             <size>
+              <width>50</width>
+              <height>1</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="wnd_navi_type" native="true">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>50</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>50</height>
+          </size>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <property name="spacing">
+           <number>30</number>
+          </property>
+          <property name="leftMargin">
+           <number>20</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QToolButton" name="btn_navi_sim">
+            <property name="minimumSize">
+             <size>
+              <width>160</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>160</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Sim Card Test</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+            <property name="autoExclusive">
+             <bool>true</bool>
+            </property>
+            <property name="toolButtonStyle">
+             <enum>Qt::ToolButtonTextOnly</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="btn_navi_iot">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>120</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>120</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>IOT Test</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+            <property name="autoExclusive">
+             <bool>true</bool>
+            </property>
+            <property name="toolButtonStyle">
+             <enum>Qt::ToolButtonTextOnly</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="navi_spacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QStackedWidget" name="stackedWidget">
+         <widget class="QWidget" name="page_sim">
+          <property name="styleSheet">
+             <string notr="true">
+#wnd_sim_filters QLabel { font: 12pt &quot;微软雅黑&quot;; color: #333333; }
+#wnd_sim_filters QLineEdit { border: 1px solid #CCCCCC; border-radius: 4px; padding: 5px; font: 12pt &quot;微软雅黑&quot;; background: #FFFFFF; }
+#wnd_sim_filters QComboBox { border: 1px solid #CCCCCC; border-radius: 4px; padding: 5px; font: 12pt &quot;微软雅黑&quot;; background: #FFFFFF; }
+#wnd_sim_filters QDateEdit { border: 1px solid #CCCCCC; border-radius: 4px; padding: 5px; font: 12pt &quot;微软雅黑&quot;; background: #FFFFFF; }
+#btn_sim_record_query { background-color: #005FA7; color: #FFFFFF; border-radius: 4px; font: 12pt &quot;微软雅黑&quot;; border: none; }
+#btn_sim_record_reset { background-color: #FFFFFF; color: #005FA7; border: 1px solid #005FA7; border-radius: 4px; font: 12pt &quot;微软雅黑&quot;; }
+#btn_sim_record_export_excel { background-color: #005FA7; color: #FFFFFF; border-radius: 4px; font: 12pt &quot;微软雅黑&quot;; border: none; }
+#btn_sim_record_delete { background-color: #FF4D4F; color: #FFFFFF; border-radius: 4px; font: 12pt &quot;微软雅黑&quot;; border: none; }
+             </string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_5">
+           <property name="spacing"> <number>15</number> </property>
+           <property name="leftMargin"> <number>20</number> </property>
+           <property name="topMargin"> <number>20</number> </property>
+           <property name="rightMargin"> <number>20</number> </property>
+           <property name="bottomMargin"> <number>20</number> </property>
+           
+           <item>
+            <widget class="QWidget" name="wnd_sim_filters" native="true">
+             <layout class="QGridLayout" name="gridLayout_sim_filters">
+              <property name="margin"> <number>0</number> </property>
+              <property name="spacing"> <number>15</number> </property>
+              
+              <item row="0" column="0"> <widget class="QLabel" name="lb_sim_record_iccid"> <property name="text"> <string>Sim ICCID:</string> </property> </widget> </item>
+              <item row="1" column="0"> <widget class="QLineEdit" name="edt_sim_record_iccid"> <property name="placeholderText"> <string>Please enter</string> </property> <property name="minimumSize"> <size> <width>200</width> <height>40</height> </size> </property> </widget> </item>
+              
+              <item row="0" column="1"> <widget class="QLabel" name="lb_sim_record_net_status"> <property name="text"> <string>Sim Network Status:</string> </property> </widget> </item>
+              <item row="1" column="1"> <widget class="QComboBox" name="combo_sim_record_net_status"> <property name="minimumSize"> <size> <width>150</width> <height>40</height> </size> </property> </widget> </item>
+              
+              <item row="0" column="2"> <widget class="QLabel" name="lb_sim_record_net_type"> <property name="text"> <string>Network Type:</string> </property> </widget> </item>
+              <item row="1" column="2"> <widget class="QComboBox" name="combo_sim_record_net_type"> <property name="minimumSize"> <size> <width>150</width> <height>40</height> </size> </property> </widget> </item>
+
+              <item row="0" column="3" colspan="3"> <widget class="QLabel" name="lb_sim_record_test_time"> <property name="text"> <string>Test Time:</string> </property> </widget> </item>
+              <item row="1" column="3"> 
+                <widget class="QDateEdit" name="edt_sim_record_begin_date"> 
+                   <property name="displayFormat"> <string>yyyy-MM-dd</string> </property> 
+                   <property name="calendarPopup"> <bool>true</bool> </property> 
+                   <property name="minimumSize"> <size> <width>180</width> <height>40</height> </size> </property> 
+                </widget> 
+              </item>
+              <item row="1" column="4"> <widget class="QLabel" name="lb_sim_to"> <property name="text"> <string>-</string> </property> <property name="alignment"> <set>Qt::AlignCenter</set> </property> <property name="minimumSize"> <size> <width>20</width> <height>40</height> </size> </property> </widget> </item>
+              <item row="1" column="5"> 
+                <widget class="QDateEdit" name="edt_sim_record_end_date"> 
+                   <property name="displayFormat"> <string>yyyy-MM-dd</string> </property> 
+                   <property name="calendarPopup"> <bool>true</bool> </property> 
+                   <property name="minimumSize"> <size> <width>180</width> <height>40</height> </size> </property> 
+                </widget> 
+              </item>
+              
+              <item row="1" column="6"> <widget class="QPushButton" name="btn_sim_record_query"> <property name="text"> <string>Search</string> </property> <property name="minimumSize"> <size> <width>80</width> <height>40</height> </size> </property> </widget> </item>
+              <item row="1" column="7"> <widget class="QPushButton" name="btn_sim_record_reset"> <property name="text"> <string>Reset</string> </property> <property name="minimumSize"> <size> <width>80</width> <height>40</height> </size> </property> </widget> </item>
+              
+              <item row="1" column="8"> <spacer name="spacer_sim_filters"> <property name="orientation"> <enum>Qt::Horizontal</enum> </property> </spacer> </item>
+             </layout>
+            </widget>
+           </item>
+
+           <item>
+            <widget class="QWidget" name="wnd_sim_actions" native="true">
+             <layout class="QHBoxLayout" name="hbox_sim_actions">
+              <property name="margin"> <number>0</number> </property>
+              <property name="spacing"> <number>10</number> </property>
+              <item> <widget class="QPushButton" name="btn_sim_record_export_excel"> <property name="text"> <string>Export</string> </property> <property name="minimumSize"> <size> <width>80</width> <height>40</height> </size> </property> </widget> </item>
+              <item> <widget class="QPushButton" name="btn_sim_record_delete"> <property name="text"> <string>Delete</string> </property> <property name="minimumSize"> <size> <width>80</width> <height>40</height> </size> </property> </widget> </item>
+              <item> <spacer name="spacer_sim_actions"> <property name="orientation"> <enum>Qt::Horizontal</enum> </property> </spacer> </item>
+             </layout>
+            </widget>
+           </item>
+           
+           <item>
+            <widget class="QTableView" name="tb_sim_record_result">
+             <property name="selectionBehavior"> <enum>QAbstractItemView::SelectRows</enum> </property>
+             <property name="sortingEnabled"> <bool>true</bool> </property>
+             <property name="verticalScrollBarPolicy"> <enum>Qt::ScrollBarAsNeeded</enum> </property>
+             <property name="alternatingRowColors"> <bool>true</bool> </property>
+             <attribute name="horizontalHeaderStretchLastSection"> <bool>true</bool> </attribute>
+            </widget>
+           </item>
+           
+          </layout>
+         </widget>
+         <widget class="QWidget" name="page_iot">
+          <property name="styleSheet">
+             <string notr="true">
+#wnd_iot_filters QLabel { font: 12pt &quot;微软雅黑&quot;; color: #333333; }
+#wnd_iot_filters QLineEdit { border: 1px solid #CCCCCC; border-radius: 4px; padding: 5px; font: 12pt &quot;微软雅黑&quot;; background: #FFFFFF; }
+#wnd_iot_filters QComboBox { border: 1px solid #CCCCCC; border-radius: 4px; padding: 5px; font: 12pt &quot;微软雅黑&quot;; background: #FFFFFF; }
+#wnd_iot_filters QDateEdit { border: 1px solid #CCCCCC; border-radius: 4px; padding: 5px; font: 12pt &quot;微软雅黑&quot;; background: #FFFFFF; }
+#btn_iot_record_query { background-color: #005FA7; color: #FFFFFF; border-radius: 4px; font: 12pt &quot;微软雅黑&quot;; border: none; }
+#btn_iot_record_reset { background-color: #FFFFFF; color: #005FA7; border: 1px solid #005FA7; border-radius: 4px; font: 12pt &quot;微软雅黑&quot;; }
+#btn_iot_record_export_excel { background-color: #005FA7; color: #FFFFFF; border-radius: 4px; font: 12pt &quot;微软雅黑&quot;; border: none; }
+#btn_iot_record_delete { background-color: #FF4D4F; color: #FFFFFF; border-radius: 4px; font: 12pt &quot;微软雅黑&quot;; border: none; }
+             </string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_7">
+           <property name="spacing"> <number>15</number> </property>
+           <property name="leftMargin"> <number>20</number> </property>
+           <property name="topMargin"> <number>20</number> </property>
+           <property name="rightMargin"> <number>20</number> </property>
+           <property name="bottomMargin"> <number>20</number> </property>
+           
+           <item>
+            <widget class="QWidget" name="wnd_iot_filters" native="true">
+             <layout class="QGridLayout" name="gridLayout_iot_filters">
+              <property name="margin"> <number>0</number> </property>
+              <property name="spacing"> <number>15</number> </property>
+              
+              <item row="0" column="0"> <widget class="QLabel" name="lb_iot_record_version"> <property name="text"> <string>IOT Version:</string> </property> </widget> </item>
+              <item row="1" column="0"> <widget class="QLineEdit" name="edt_iot_record_version"> <property name="placeholderText"> <string>Please enter</string> </property> <property name="minimumSize"> <size> <width>200</width> <height>40</height> </size> </property> </widget> </item>
+              
+              <item row="0" column="1"> <widget class="QLabel" name="lb_iot_record_imei"> <property name="text"> <string>IOT IMEI:</string> </property> </widget> </item>
+              <item row="1" column="1"> <widget class="QLineEdit" name="edt_iot_record_imei"> <property name="placeholderText"> <string>Please enter</string> </property> <property name="minimumSize"> <size> <width>200</width> <height>40</height> </size> </property> </widget> </item>
+
+              <item row="0" column="2" colspan="3"> <widget class="QLabel" name="lb_iot_record_test_time"> <property name="text"> <string>Test Time:</string> </property> </widget> </item>
+              <item row="1" column="2"> 
+                <widget class="QDateEdit" name="edt_iot_record_begin_date"> 
+                   <property name="displayFormat"> <string>yyyy-MM-dd</string> </property> 
+                   <property name="calendarPopup"> <bool>true</bool> </property> 
+                   <property name="minimumSize"> <size> <width>180</width> <height>40</height> </size> </property> 
+                </widget> 
+              </item>
+              <item row="1" column="3"> <widget class="QLabel" name="lb_iot_to"> <property name="text"> <string>-</string> </property> <property name="alignment"> <set>Qt::AlignCenter</set> </property> <property name="minimumSize"> <size> <width>20</width> <height>40</height> </size> </property> </widget> </item>
+              <item row="1" column="4"> 
+                <widget class="QDateEdit" name="edt_iot_record_end_date"> 
+                   <property name="displayFormat"> <string>yyyy-MM-dd</string> </property> 
+                   <property name="calendarPopup"> <bool>true</bool> </property> 
+                   <property name="minimumSize"> <size> <width>180</width> <height>40</height> </size> </property> 
+                </widget> 
+              </item>
+              
+              <item row="1" column="5"> <widget class="QPushButton" name="btn_iot_record_query"> <property name="text"> <string>Search</string> </property> <property name="minimumSize"> <size> <width>80</width> <height>40</height> </size> </property> </widget> </item>
+              <item row="1" column="6"> <widget class="QPushButton" name="btn_iot_record_reset"> <property name="text"> <string>Reset</string> </property> <property name="minimumSize"> <size> <width>80</width> <height>40</height> </size> </property> </widget> </item>
+              
+              <item row="1" column="7"> <spacer name="spacer_iot_filters"> <property name="orientation"> <enum>Qt::Horizontal</enum> </property> </spacer> </item>
+             </layout>
+            </widget>
+           </item>
+
+           <item>
+            <widget class="QWidget" name="wnd_iot_actions" native="true">
+             <layout class="QHBoxLayout" name="hbox_iot_actions">
+              <property name="margin"> <number>0</number> </property>
+              <property name="spacing"> <number>10</number> </property>
+              <item> <widget class="QPushButton" name="btn_iot_record_export_excel"> <property name="text"> <string>Export</string> </property> <property name="minimumSize"> <size> <width>80</width> <height>40</height> </size> </property> </widget> </item>
+              <item> <widget class="QPushButton" name="btn_iot_record_delete"> <property name="text"> <string>Delete</string> </property> <property name="minimumSize"> <size> <width>80</width> <height>40</height> </size> </property> </widget> </item>
+              <item> <spacer name="spacer_iot_actions"> <property name="orientation"> <enum>Qt::Horizontal</enum> </property> </spacer> </item>
+             </layout>
+            </widget>
+           </item>
+           
+           <item>
+            <widget class="QTableView" name="tb_iot_record_result">
+             <property name="selectionBehavior"> <enum>QAbstractItemView::SelectRows</enum> </property>
+             <property name="sortingEnabled"> <bool>true</bool> </property>
+             <property name="verticalScrollBarPolicy"> <enum>Qt::ScrollBarAsNeeded</enum> </property>
+             <property name="alternatingRowColors"> <bool>true</bool> </property>
+             <attribute name="horizontalHeaderStretchLastSection"> <bool>true</bool> </attribute>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="page_advance">
+     <widget class="QWidget" name="wnd_advance" native="true">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>1280</width>
+        <height>668</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">#lb_serial_info
+,#lb_lang_info
+{
+	color: #005FA7;
+	font: 20pt &quot;微软雅黑&quot;;
+	background:transparent;
+}
+
+#wnd_advance
+{
+	background: transparent;
+}
+
+#wnd_serial_config
+,#wnd_serial_config_container
+{
+	background: transparent;
+}
+
+#wnd_lang_select
+,#wnd_select_lang_container
+{
+	background: transparent;
+}
+
+#wnd_advance_bottom_btn
+{
+	background: transparent;
+}</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <property name="spacing">
+        <number>20</number>
+       </property>
+       <property name="leftMargin">
+        <number>10</number>
+       </property>
+       <property name="topMargin">
+        <number>20</number>
+       </property>
+       <property name="rightMargin">
+        <number>10</number>
+       </property>
+       <property name="bottomMargin">
+        <number>10</number>
+       </property>
+       <item>
+        <widget class="QWidget" name="wnd_serial_config" native="true">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>100</height>
+          </size>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_26">
+          <property name="spacing">
+           <number>10</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="lb_serial_info">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Serial Connect Config</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="wnd_serial_config_container" native="true">
+            <layout class="QHBoxLayout" name="horizontalLayout_57">
+             <property name="spacing">
+              <number>10</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QLabel" name="lb_scaner_serialport">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>130</width>
+                 <height>40</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>130</width>
+                 <height>40</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Serial Port:</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="cb_serialport">
+               <property name="minimumSize">
+                <size>
+                 <width>160</width>
+                 <height>40</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>160</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="lb_scaner_baudrate">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>130</width>
+                 <height>40</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>130</width>
+                 <height>40</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Baudrate:</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="cb_baudrate">
+               <property name="minimumSize">
+                <size>
+                 <width>160</width>
+                 <height>40</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>160</width>
+                 <height>40</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_35">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QWidget" name="wnd_lang_select" native="true">
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>100</height>
+          </size>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_27">
+          <property name="spacing">
+           <number>10</number>
+          </property>
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="lb_lang_info">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Select Language</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="wnd_select_lang_container" native="true">
+            <layout class="QHBoxLayout" name="horizontalLayout_58">
+             <property name="spacing">
+              <number>50</number>
+             </property>
+             <property name="leftMargin">
+              <number>20</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QPushButton" name="btn_lang_cn">
+               <property name="minimumSize">
+                <size>
+                 <width>150</width>
+                 <height>40</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>150</width>
+                 <height>40</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>中文</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btn_lang_en">
+               <property name="minimumSize">
+                <size>
+                 <width>150</width>
+                 <height>40</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>150</width>
+                 <height>40</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>English</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_36">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_4">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>0</width>
+           <height>325</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QWidget" name="wnd_advance_bottom_btn" native="true">
+         <layout class="QHBoxLayout" name="horizontalLayout_30">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <spacer name="horizontalSpacer_27">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>863</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btn_save_advance">
+            <property name="minimumSize">
+             <size>
+              <width>90</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>90</width>
+              <height>40</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Save</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </widget>
+  </widget>
+ </widget>
+ <resources>
+  <include location="../res/ToolingBoardTest_res.qrc"/>
+ </resources>
+ <connections/>
+</ui>

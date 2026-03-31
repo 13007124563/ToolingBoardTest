@@ -1,0 +1,96 @@
+QWidget#InputMethodEditor {
+    background-color: transparent;
+}
+
+QFrame {
+    background-color: #E8EDF1;
+    border: none;
+    border-radius: 8px;
+}
+
+QToolButton {
+    min-width: 48px;
+    min-height: 48px;
+    color: #1d2129;
+    text-align: center;
+    font-size: 20px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 28px;
+}
+
+QToolButton#basic {
+    background-color: #FFF;
+    border-radius: 4px;
+}
+
+QToolButton#special {
+    background-color: #FFF;
+    border-radius: 4px;
+}
+
+QToolButton#hide {
+    width: 22px;
+    height: 22px;
+}
+
+QToolButton#basic:pressed {
+    background-color: #D1DBE3;
+}
+
+QToolButton#special:pressed, QToolButton#special:checked {
+    background-color: #D1DBE3;
+}
+
+QToolButton#collapse {
+    background: transparent;
+    border: none;
+}
+
+QLineEdit {
+    background-color:white;
+}
+
+QListWidget#candidate {
+    background-color: #E8EDF1;
+    border: 1px solid #E8EDF1;
+}
+
+QListWidget#candidate::item {
+    background-color: #D1DBE3;
+    border: 1px solid #D1DBE3;
+    border-radius: 5px;
+    padding: 8px;
+    margin: 4px;
+    color: black;
+}
+
+QListWidget#candidate::item:selected {
+    background-color: #D1DBE3;
+    color: black;
+}
+
+QScrollBar:vertical {
+    width: 0px;
+    background: transparent;
+    border: none;
+    margin: 0px;
+}
+
+QScrollBar::handle:vertical {
+    width: 0px;
+    background: transparent;
+    border: none;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    width: 0px;
+    height: 0px;
+    background: transparent;
+    border: none;
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: transparent;
+}

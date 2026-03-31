@@ -1,0 +1,37 @@
+<RCC>
+    <qresource prefix="/dictionary">
+        <file>dict/ChinesePinyin</file>
+        <file>dict/ChinesePinyin-Unsupported phrases</file>
+    </qresource>
+    <qresource prefix="/icon">
+        <file>icon/collapse.png</file>
+        <file>icon/collapse@2x.png</file>
+        <file>icon/backspace_icon.png</file>
+        <file>icon/backspace_icon@2x.png</file>
+        <file>icon/shift_icon.png</file>
+        <file>icon/shift_icon@2x.png</file>
+        <file>icon/space.png</file>
+        <file>icon/space@2x.png</file>
+        <file>icon/switch.png</file>
+        <file>icon/switch@2x.png</file>
+        <file>icon/en_zh_icon.png</file>
+        <file>icon/en_zh_icon@2x.png</file>
+        <file>icon/num_sym_icon.png</file>
+        <file>icon/num_sym_icon@2x.png</file>
+        <file>icon/sym_en_icon.png</file>
+        <file>icon/sym_en_icon@2x.png</file>
+        <file>icon/zh_num_icon.png</file>
+        <file>icon/zh_num_icon@2x.png</file>
+        <file>icon/符_A_icon@2x.png</file>
+        <file>icon/符_A_icon.png</file>
+        <file>icon/中_1_icon@2x.png</file>
+        <file>icon/中_1_icon.png</file>
+        <file>icon/A_中_icon@2x.png</file>
+        <file>icon/A_中_icon.png</file>
+        <file>icon/1_符_icon@2x.png</file>
+        <file>icon/1_符_icon.png</file>
+    </qresource>
+    <qresource prefix="/style">
+        <file>white_keyboard.qss</file>
+    </qresource>
+</RCC>

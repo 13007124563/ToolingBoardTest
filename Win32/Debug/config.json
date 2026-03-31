@@ -1,0 +1,12 @@
+{
+    "cabinet": {
+        "cabinet_no": "",
+        "language": "Cn",
+        "name": "",
+        "title": ""
+    },
+    "serial_info": {
+        "baudrate": "",
+        "serial_port_name": "COM10"
+    }
+}

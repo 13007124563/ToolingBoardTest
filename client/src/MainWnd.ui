@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWnd</class>
+ <widget class="QWidget" name="MainWnd">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1280</width>
+    <height>710</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">#MainWnd
+,#wnd_main_bk
+{
+	background:transparent;
+	background-color: #ffffff;
+}
+
+QLabel
+{
+	background:transparent;
+}
+
+#wnd_main_bk
+{
+	background-color: #E9F2F8;
+}
+
+#sw_main
+,#page_main
+{
+	background:transparent;
+}</string>
+  </property>
+  <widget class="QWidget" name="wnd_main_bk" native="true">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1280</width>
+     <height>710</height>
+    </rect>
+   </property>
+   <widget class="QStackedWidget" name="sw_main">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>1280</width>
+      <height>710</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">
+QPushButton
+{
+	border: none;
+	border-radius:6px;
+	font: 20pt &quot;微软雅黑&quot;;
+	color:#FFFFFF;
+}
+
+/* 橙色按钮 - 镜像版本 */
+QPushButton[objectName=&quot;btn_nor_version&quot;]
+{
+	background-color: #FF8C00;
+}
+QPushButton[objectName=&quot;btn_nor_version&quot;]:pressed
+{
+	background-color: #E67E00;
+}
+
+/* 蓝色按钮 - 一键测试 */
+QPushButton[objectName=&quot;btn_nor_all_test&quot;]
+{
+	background-color: #005FA7;
+}
+QPushButton[objectName=&quot;btn_nor_all_test&quot;]:pressed
+{
+	background-color:#74a8cf;
+}
+
+/* 绿色按钮 - 测试记录 */
+QPushButton[objectName=&quot;btn_nor_record&quot;]
+{
+	background-color: #00C853;
+}
+QPushButton[objectName=&quot;btn_nor_record&quot;]:pressed
+{
+	background-color: #00A042;
+}
+
+/* 白色按钮 - 清空测试结果 */
+QPushButton[objectName=&quot;btn_nor_clear&quot;]
+{
+	background-color: #FFFFFF;
+	color: #FF0000;
+	border: 2px solid #FF0000;
+}
+QPushButton[objectName=&quot;btn_nor_clear&quot;]:pressed
+{
+	background-color: #FFF0F0;
+}
+
+QPushButton:disabled
+{
+	background-color:#999999;
+	color: #DDDDDD;
+	border: none;
+}
+</string>
+    </property>
+    <widget class="QWidget" name="page_main">
+     <property name="styleSheet">
+      <string notr="true">#wnd_left_panel {
+    background-color: #ffffff;
+    border-radius: 10px;
+}
+#wnd_right_panel {
+    background-color: #ffffff;
+    border-radius: 10px;
+}
+
+#lb_module_type, #lb_apn_info, #lb_net_info {
+    font: 75 12pt "微软雅黑";
+    color: #333333;
+}
+
+/* 输入框样式 */
+QComboBox, QLineEdit {
+    border: 1px solid #CCCCCC;
+    border-radius: 4px;
+    padding: 2px;
+    background: #FFFFFF;
+    font: 12pt "微软雅黑";
+    color: #333333;
+    min-height: 35px;
+}
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 30px;
+    border-left-width: 0px;
+    border-left-color: transparent;
+    border-left-style: none;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    background: transparent;
+}
+QComboBox::down-arrow {
+    image: url(:/img/backend/icon-up.png);
+    width: 20px;
+    height: 13px;
+}
+
+/* 右侧信息标签样式 */
+QLabel[objectName^="lb_"] {
+    font: 12pt "微软雅黑";
+    color: #666666;
+}
+
+QLineEdit[objectName^="lb_test_"] {
+     background-color: #F8F8F8;
+     border: 1px solid #D5D5D5;
+     border-radius: 6px;
+     padding: 2px 5px;
+     color: #333333;
+     font: 12pt "微软雅黑";
+}</string>
+     </property>
+     <layout class="QHBoxLayout" name="main_layout">
+      <property name="spacing">
+       <number>20</number>
+      </property>
+      <property name="leftMargin">
+       <number>20</number>
+      </property>
+      <property name="topMargin">
+       <number>20</number>
+      </property>
+      <property name="rightMargin">
+       <number>20</number>
+      </property>
+      <property name="bottomMargin">
+       <number>10</number>
+      </property>
+      <item>
+       <widget class="QWidget" name="wnd_left_panel" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>280</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>280</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_Left">
+         <property name="spacing">
+          <number>10</number>
+         </property>
+         <property name="leftMargin"><number>20</number></property>
+         <property name="topMargin"><number>20</number></property>
+         <property name="rightMargin"><number>20</number></property>
+         <property name="bottomMargin"><number>20</number></property>
+         <item>
+            <widget class="QLabel" name="lb_module_type">
+                <property name="text"><string>Module Type:</string></property>
+            </widget>
+         </item>
+         <item>
+            <widget class="QComboBox" name="cb_module_type">
+                <property name="minimumSize"><size><width>0</width><height>40</height></size></property>
+            </widget>
+         </item>
+         <item>
+            <widget class="QLabel" name="lb_apn_info"><property name="text"><string>APN:</string></property></widget>
+         </item>
+         <item>
+            <widget class="QComboBox" name="le_apn">
+                <property name="editable"><bool>true</bool></property>
+                <property name="minimumSize"><size><width>0</width><height>40</height></size></property>
+                <property name="currentText"><string></string></property>
+            </widget>
+         </item>
+         <item>
+            <widget class="QLabel" name="lb_net_info"><property name="text"><string>NET:</string></property></widget>
+         </item>
+         <item>
+            <widget class="QComboBox" name="le_net">
+                <property name="editable"><bool>true</bool></property>
+                <property name="minimumSize"><size><width>0</width><height>40</height></size></property>
+                <property name="currentText"><string></string></property>
+            </widget>
+         </item>
+         <item>
+             <spacer name="verticalSpacer_Buttons">
+                 <property name="orientation"><enum>Qt::Vertical</enum></property>
+                 <property name="sizeType"><enum>QSizePolicy::Fixed</enum></property>
+                 <property name="sizeHint" stdset="0"><size><width>20</width><height>20</height></size></property>
+             </spacer>
+         </item>
+         
+         <item><widget class="QPushButton" name="btn_nor_version"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Image Version</string></property></widget></item>
+         <item><widget class="QPushButton" name="btn_nor_all_test"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>One-key Test</string></property></widget></item>
+         <item><widget class="QPushButton" name="btn_nor_record"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Test Record</string></property></widget></item>
+         
+         <item><spacer name="verticalSpacer_Bottom"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>40</height></size></property></spacer></item>
+         
+         <item><widget class="QPushButton" name="btn_nor_clear"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Clear Test Result</string></property></widget></item>
+        </layout>
+       </widget>
+      </item>
+      
+      <!-- Right Panel -->
+      <item>
+       <widget class="QWidget" name="wnd_right_panel" native="true">
+        <layout class="QVBoxLayout" name="verticalLayout_Right">
+        <property name="spacing"><number>10</number></property>
+        <property name="leftMargin"><number>20</number></property>
+        <property name="topMargin"><number>20</number></property>
+        <property name="rightMargin"><number>20</number></property>
+        <property name="bottomMargin"><number>20</number></property>
+         <item>
+          <layout class="QGridLayout" name="gridLayout_Info">
+           <property name="verticalSpacing"><number>10</number></property>
+           <property name="horizontalSpacing"><number>20</number></property>
+           
+           <!-- Row 0: Image Version Label -->
+           <item row="0" column="0"><widget class="QLabel" name="lb_version_info"><property name="text"><string>Image Version:</string></property></widget></item>
+           
+           <!-- Row 1: Image Version Field -->
+           <item row="1" column="0"><widget class="QLineEdit" name="lb_test_version"><property name="readOnly"><bool>true</bool></property><property name="minimumSize"><size><width>0</width><height>35</height></size></property></widget></item>
+           
+           <!-- Row 2: NetType & SimNetStatus Labels -->
+           <item row="2" column="0"><widget class="QLabel" name="lb_network_info"><property name="text"><string>Network Type:</string></property></widget></item>
+           <item row="2" column="1"><widget class="QLabel" name="lb_sim_network_info_label"><property name="text"><string>Sim Network Status:</string></property></widget></item>
+           
+           <!-- Row 3: NetType & SimNetStatus Fields -->
+           <item row="3" column="0"><widget class="QLineEdit" name="lb_test_network_type"><property name="readOnly"><bool>true</bool></property><property name="minimumSize"><size><width>0</width><height>35</height></size></property></widget></item>
+           <item row="3" column="1"><widget class="QLineEdit" name="lb_test_sim_network"><property name="readOnly"><bool>true</bool></property><property name="minimumSize"><size><width>0</width><height>35</height></size></property></widget></item>
+           
+           <!-- Row 4: ICCID & RSSI Labels -->
+           <item row="4" column="0"><widget class="QLabel" name="lb_iccid_info"><property name="text"><string>Sim Card ICCID:</string></property></widget></item>
+           <item row="4" column="1"><widget class="QLabel" name="lb_rssi_info"><property name="text"><string>Signal Strength:</string></property></widget></item>
+           
+           <!-- Row 5: ICCID & RSSI Fields -->
+           <item row="5" column="0"><widget class="QLineEdit" name="lb_test_iccid"><property name="readOnly"><bool>true</bool></property><property name="minimumSize"><size><width>0</width><height>35</height></size></property></widget></item>
+           <item row="5" column="1"><widget class="QLineEdit" name="lb_test_rssi"><property name="readOnly"><bool>true</bool></property><property name="minimumSize"><size><width>0</width><height>35</height></size></property></widget></item>
+           
+           <!-- Row 6: IOT Ver & IMEI Labels -->
+           <item row="6" column="0"><widget class="QLabel" name="lb_iot_module_info"><property name="text"><string>IOT Version:</string></property></widget></item>
+           <item row="6" column="1"><widget class="QLabel" name="lb_iot_imei_info"><property name="text"><string>IOT IMEI:</string></property></widget></item>
+           
+           <!-- Row 7: IOT Ver & IMEI Fields -->
+           <item row="7" column="0"><widget class="QLineEdit" name="lb_test_iot_module_ver"><property name="readOnly"><bool>true</bool></property><property name="minimumSize"><size><width>0</width><height>35</height></size></property></widget></item>
+           <item row="7" column="1"><widget class="QLineEdit" name="lb_test_iot_imei"><property name="readOnly"><bool>true</bool></property><property name="minimumSize"><size><width>0</width><height>35</height></size></property></widget></item>
+          </layout>
+         </item>
+         
+         <item>
+            <widget class="QLabel" name="lb_process_info">
+                <property name="text"><string>Test Execution Process:</string></property>
+                <property name="styleSheet"><string>font: 75 12pt "微软雅黑"; color: #333333; background: transparent; border: none;</string></property>
+            </widget>
+         </item>
+         <item>
+            <widget class="QPlainTextEdit" name="lb_test_cmd_excute_return_msg">
+                <property name="readOnly"><bool>true</bool></property>
+                <property name="styleSheet"><string>border: 1px solid #D5D5D5; border-radius: 5px; background: #F8F8F8; color: #333333; font: 10pt "微软雅黑";</string></property>
+            </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -1,0 +1,5 @@
+﻿Total lines: 1235
+simStart=-1 iotStart=-1
+simEnd=57 iotEnd=57
+Written OK, total lines: 1235
+VERIFIED: No old getSelectedRowsData for sim/iot delete handlers

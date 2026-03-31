@@ -1,0 +1,22 @@
+# 忽略编译产物
+*.so
+*.qm
+*.ts.autosave
+*.o
+*.dll
+*.exe
+*.sh
+
+# 忽略日志和临时文件
+log.txt
+ts.cmd
+*.log
+*.tmp
+
+# 忽略文档目录（可选）
+doc/*.docx
+doc/*.md
+
+# 忽略 IDE 配置
+.vscode/
+build/
