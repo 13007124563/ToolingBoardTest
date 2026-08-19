@@ -919,8 +919,11 @@ void MainWnd::initModuleTypeComboBox()
     ui->cb_module_type->addItem("EG21", "EG21");
     ui->cb_module_type->addItem("BG95", "BG95-SERIAL");
 
-    // 默认显示占位符
-    ui->cb_module_type->setCurrentIndex(0);
+    // 默认选中 EG21
+    const int eg21Index = ui->cb_module_type->findData("EG21");
+    if (eg21Index >= 0) {
+        ui->cb_module_type->setCurrentIndex(eg21Index);
+    }
 
     // 确保不可编辑，仅下拉选择
     ui->cb_module_type->setEditable(false);
