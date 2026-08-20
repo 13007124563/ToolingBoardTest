@@ -29,6 +29,8 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QScrollArea>
+#include <QSizePolicy>
 
 // 测试执行中半透明遮罩小工具类
 class TestProgressWidget : public QWidget {
@@ -67,6 +69,21 @@ MainWnd::MainWnd(QWidget *parent) :
 {
 
     ui->setupUi(this);
+
+    // 右侧布局：蓝色滚动区拉伸占满剩余空间，绿色过程区保持固定高度
+    if (ui->verticalLayout_Right) {
+        ui->verticalLayout_Right->setStretch(0, 1);  // scrollArea_Info
+        ui->verticalLayout_Right->setStretch(1, 0);  // wnd_process_fixed
+    }
+
+    // 关键：QScrollArea 默认 minimumSizeHint 会跟随内容高度，
+    // 布局会把滚动区撑到与内容同高，导致永远不出现滚动条。
+    // 垂直策略设为 Ignored 后，由 stretch 决定可视高度，内容超出即可滚动。
+    if (ui->scrollArea_Info) {
+        ui->scrollArea_Info->setMinimumHeight(0);
+        ui->scrollArea_Info->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Ignored);
+        ui->scrollArea_Info->setWidgetResizable(true);
+    }
 
     // 初始化脚本路径（与可执行文件同级目录）
     m_scriptPath = QCoreApplication::applicationDirPath() + "/iot_start.sh";
