@@ -74,86 +74,23 @@ check_root() {
     fi
 }
 
-# 兼容新旧内核的 GPIO 控制：
-# - 旧内核：全局号多为小数字（如 122）
-# - 新内核（gpiochip base>=512）：同一管脚常变为 base+offset
-# export 返回 Invalid argument 时，按 gpiochip base 尝试映射号
-gpio_write() {
-    local LEGACY_NUM=$1
-    local VALUE=$2
-    local DIRECTION=${3:-out}
-    local candidates=("$LEGACY_NUM")
-    local chip base ngpio mapped num
-
-    for chip in /sys/class/gpio/gpiochip*; do
-        [ -f "$chip/base" ] || continue
-        base=$(cat "$chip/base" 2>/dev/null) || continue
-        ngpio=$(cat "$chip/ngpio" 2>/dev/null) || ngpio=0
-        if [ -n "$base" ] && [ "$LEGACY_NUM" -lt 256 ] && [ "$base" -ge 256 ]; then
-            mapped=$((base + LEGACY_NUM))
-            if [ "$mapped" -lt $((base + ngpio)) ]; then
-                candidates+=("$mapped")
-            fi
-        fi
-    done
-
-    for num in "${candidates[@]}"; do
-        if [ ! -d "/sys/class/gpio/gpio${num}" ]; then
-            if ! echo "$num" > /sys/class/gpio/export 2>/dev/null; then
-                continue
-            fi
-            sleep 0.05
-        fi
-        if [ ! -d "/sys/class/gpio/gpio${num}" ]; then
-            continue
-        fi
-        if ! echo "$DIRECTION" > "/sys/class/gpio/gpio${num}/direction" 2>/dev/null; then
-            continue
-        fi
-        if ! echo "$VALUE" > "/sys/class/gpio/gpio${num}/value" 2>/dev/null; then
-            continue
-        fi
-        log "SUCCESS" "GPIO${LEGACY_NUM} -> sysfs gpio${num} = ${VALUE}"
-        return 0
-    done
-
-    # libgpiod 兜底（按线路名查找）
-    if command -v gpiofind >/dev/null 2>&1 && command -v gpioset >/dev/null 2>&1; then
-        local line
-        for line in "W_n_DISABLE" "wn_disable" "gpio${LEGACY_NUM}"; do
-            if spec=$(gpiofind "$line" 2>/dev/null); then
-                if gpioset ${spec}=${VALUE} 2>/dev/null; then
-                    log "SUCCESS" "GPIO${LEGACY_NUM} controlled via gpioset ($line)=$VALUE"
-                    return 0
-                fi
-            fi
-        done
-    fi
-
-    log "WARN" "无法控制 GPIO${LEGACY_NUM}（候选: ${candidates[*]}），请检查内核 GPIO 号或设备树"
-    return 1
-}
-
 check_env() {
     rm -rf /etc/udhcpc.d/50default
     ln -s /etc/zl_test/50default /etc/udhcpc.d/50default
 
-    # 若 AT 口已存在，认为模组已上电，跳过拉 GPIO，避免错误 GPIO 号导致失败
-    if [ -c /dev/ttyUSB2 ] || [ -c /dev/ttyUSB1 ] || [ -c /dev/ttyUSB0 ]; then
-        log "INFO" "检测到 USB AT 口已存在，跳过 W_n_DISABLE(GPIO122) 复位"
-        return 0
+    #W_n_DISABLE
+    if [ ! -d "/sys/class/gpio/gpio122/" ]; then
+        echo 122 > /sys/class/gpio/export
     fi
+    echo out > /sys/class/gpio/gpio122/direction
 
-    #W_n_DISABLE：拉低再拉高，复位/使能模组相关电源
-    log "INFO" "通过 GPIO122(W_n_DISABLE) 复位模组电源..."
-    if gpio_write 122 0 out; then
-        sleep 1
-        gpio_write 122 1 out
-        sleep 2
-    else
-        log "ERROR" "GPIO122 控制失败，模组可能无法上电，后续 /dev/ttyUSBx 可能不出现"
-        log "ERROR" "请在板端执行: ls /sys/class/gpio/gpiochip*; cat /sys/class/gpio/gpiochip*/base"
-    fi
+    echo 0 > /sys/class/gpio/gpio122/value
+
+    sleep 1
+
+    echo 1 > /sys/class/gpio/gpio122/value
+
+    sleep 1 
 }
 
 check_bg95_env() {
@@ -1242,12 +1179,11 @@ main() {
     # 解析命令行参数
     parse_args "$@"
     check_image_version
-    # 前置检查 root（GPIO 操作需要）
-    check_root
     # 清理旧进程
     kill_iot_start_process
     check_env
-    # AT端口检查
+    # 前置检查（root权限+AT端口）
+    check_root
     check_at_port
 
     systemctl stop connman
