@@ -158,6 +158,20 @@ QComboBox::down-arrow {
     height: 13px;
 }
 
+/* 模块类型固定 EG21：隐藏下拉箭头 */
+#cb_module_type::drop-down {
+    width: 0px;
+    border: none;
+}
+#cb_module_type::down-arrow {
+    image: none;
+    width: 0px;
+    height: 0px;
+}
+#cb_module_type {
+    padding-right: 8px;
+}
+
 /* 右侧信息标签样式（表格式左列） */
 #scrollAreaWidgetContents QLabel {
     font: 12pt "微软雅黑";
