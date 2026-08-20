@@ -72,12 +72,33 @@ MainWnd::MainWnd(QWidget *parent) :
 
     // 右侧布局：蓝色滚动区拉伸占满剩余空间，绿色过程区保持固定高度
     if (ui->verticalLayout_Right) {
+        ui->verticalLayout_Right->setContentsMargins(20, 10, 20, 20);
         ui->verticalLayout_Right->setStretch(0, 1);  // scrollArea_Info
         ui->verticalLayout_Right->setStretch(1, 0);  // wnd_process_fixed
     }
 
-    // 关键：QScrollArea 默认 minimumSizeHint 会跟随内容高度，
-    // 布局会把滚动区撑到与内容同高，导致永远不出现滚动条。
+    // 滚动区表格式布局：左 Label 固定宽度，右 QLineEdit 拉伸
+    if (ui->gridLayout_Info) {
+        ui->gridLayout_Info->setVerticalSpacing(8);
+        ui->gridLayout_Info->setHorizontalSpacing(12);
+        ui->gridLayout_Info->setContentsMargins(0, 0, 8, 0);
+        ui->gridLayout_Info->setColumnStretch(0, 0);
+        ui->gridLayout_Info->setColumnStretch(1, 1);
+    }
+    if (ui->scrollAreaWidgetContents) {
+        for (QLabel *lb : ui->scrollAreaWidgetContents->findChildren<QLabel *>()) {
+            lb->setContentsMargins(0, 0, 0, 0);
+            lb->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+            lb->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+            lb->setMinimumWidth(140);
+        }
+        for (QLineEdit *edit : ui->scrollAreaWidgetContents->findChildren<QLineEdit *>()) {
+            edit->setContentsMargins(0, 0, 0, 0);
+            edit->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+        }
+    }
+
+    // QScrollArea 默认 minimumSizeHint 会跟随内容高度，
     // 垂直策略设为 Ignored 后，由 stretch 决定可视高度，内容超出即可滚动。
     if (ui->scrollArea_Info) {
         ui->scrollArea_Info->setMinimumHeight(0);
