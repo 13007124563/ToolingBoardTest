@@ -209,9 +209,6 @@ void MainWnd::lang_change()
     QString editPlaceholder = isCn ? "请输入或选择" : "Enter or select";
     if (ui->le_apn->lineEdit()) ui->le_apn->lineEdit()->setPlaceholderText(editPlaceholder);
     if (ui->le_net->lineEdit()) ui->le_net->lineEdit()->setPlaceholderText(editPlaceholder);
-    // 更新模块类型占位符（第0项）
-    if (ui->cb_module_type->count() > 0)
-        ui->cb_module_type->setItemText(0, isCn ? "请选择" : "Select");
     // 更新测试执行中遮罩文字
     if (m_spinTextLabel)
         m_spinTextLabel->setText(isCn ? "测试执行中~" : "Testing~");
@@ -910,7 +907,8 @@ void MainWnd::updateDefaultValues()
 
 void MainWnd::setInputsEnabled(bool enabled)
 {
-    ui->cb_module_type->setEnabled(enabled);
+    // 模块类型固定 EG21，始终不可改
+    ui->cb_module_type->setEnabled(false);
     ui->le_apn->setEnabled(enabled);
     ui->le_net->setEnabled(enabled);
 
@@ -948,23 +946,12 @@ void MainWnd::on_btn_nor_record_clicked()
 
 void MainWnd::initModuleTypeComboBox()
 {
-    // 初始化模块类型下拉框
-    bool isCnCombo = (APPMODEL()->CabinetLanguage() == zl::ELanguageType_Cn);
+    // 模块类型固定为 EG21，不可修改
     ui->cb_module_type->clear();
-    ui->cb_module_type->addItem(isCnCombo ? "请选择" : "Select", "");  // 占位符
-    ui->cb_module_type->addItem("ME3630", "ME3630");
-    ui->cb_module_type->addItem("EC200U", "EC200U");
     ui->cb_module_type->addItem("EG21", "EG21");
-    ui->cb_module_type->addItem("BG95", "BG95-SERIAL");
-
-    // 默认选中 EG21
-    const int eg21Index = ui->cb_module_type->findData("EG21");
-    if (eg21Index >= 0) {
-        ui->cb_module_type->setCurrentIndex(eg21Index);
-    }
-
-    // 确保不可编辑，仅下拉选择
+    ui->cb_module_type->setCurrentIndex(0);
     ui->cb_module_type->setEditable(false);
+    ui->cb_module_type->setEnabled(false);
 }
 
 void MainWnd::executeIotScript(const QString& moduleName, const QString& apn, const QString& net)

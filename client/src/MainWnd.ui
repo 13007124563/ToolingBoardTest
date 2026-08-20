@@ -249,6 +249,7 @@ QComboBox::down-arrow {
          </item>
          <item>
             <widget class="QComboBox" name="cb_module_type">
+                <property name="enabled"><bool>false</bool></property>
                 <property name="minimumSize"><size><width>0</width><height>40</height></size></property>
             </widget>
          </item>
