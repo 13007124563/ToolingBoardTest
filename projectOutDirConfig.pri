@@ -9,4 +9,11 @@ win32 {
     }
 }
 
-# Unix/Linux uses default Qt Creator output paths
+# Unix/Linux：uic 生成的 ui_*.h 必须落在构建目录，并由 INCLUDEPATH 找到
+# 避免 Makefile 仍依赖已删除的源码根目录 ../../ui_*.h
+unix {
+    UI_DIR = $$OUT_PWD
+    MOC_DIR = $$OUT_PWD
+    RCC_DIR = $$OUT_PWD
+    INCLUDEPATH += $$OUT_PWD
+}

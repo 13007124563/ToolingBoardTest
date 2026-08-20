@@ -274,7 +274,6 @@ QComboBox::down-arrow {
             <widget class="QComboBox" name="le_apn">
                 <property name="editable"><bool>true</bool></property>
                 <property name="minimumSize"><size><width>0</width><height>40</height></size></property>
-                <property name="currentText"><string></string></property>
             </widget>
          </item>
          <item>
@@ -284,7 +283,6 @@ QComboBox::down-arrow {
             <widget class="QComboBox" name="le_net">
                 <property name="editable"><bool>true</bool></property>
                 <property name="minimumSize"><size><width>0</width><height>40</height></size></property>
-                <property name="currentText"><string></string></property>
             </widget>
          </item>
          <item>

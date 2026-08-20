@@ -145,6 +145,19 @@ MainWnd::MainWnd(QWidget *parent) :
         ui->le_net->lineEdit()->setPlaceholderText(placeholderInit);
     }
 
+    // 可编辑下拉框需在 lineEdit 就绪后强制写入默认显示文本
+    {
+        const int cmnetIndex = ui->le_apn->findText(QStringLiteral("cmnet"));
+        if (cmnetIndex >= 0) {
+            ui->le_apn->setCurrentIndex(cmnetIndex);
+            ui->le_apn->setEditText(QStringLiteral("cmnet"));
+        }
+        if (ui->le_net->count() > 0) {
+            ui->le_net->setCurrentIndex(0);
+            ui->le_net->setEditText(ui->le_net->itemText(0));
+        }
+    }
+
     // ui->btn_nor_clear->hide();
     // ui->btn_nor_save->hide();
 
@@ -1522,9 +1535,6 @@ void MainWnd::loadApnNetHistory()
     ui->le_apn->clear();
     ui->le_apn->addItems(apnList);
     ui->le_apn->setEditable(true);
-    // 不预选，显示占位符
-    ui->le_apn->setCurrentIndex(-1);
-    if (ui->le_apn->lineEdit()) ui->le_apn->lineEdit()->clear();
 
     // 预设的NET选项
     QStringList netList;
@@ -1534,9 +1544,6 @@ void MainWnd::loadApnNetHistory()
     ui->le_net->clear();
     ui->le_net->addItems(netList);
     ui->le_net->setEditable(true);
-    // 不预选，显示占位符
-    ui->le_net->setCurrentIndex(-1);
-    if (ui->le_net->lineEdit()) ui->le_net->lineEdit()->clear();
 }
 
 void MainWnd::addApnToHistory(const QString& apn)
