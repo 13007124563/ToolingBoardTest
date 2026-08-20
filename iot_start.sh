@@ -472,7 +472,7 @@ run_full_test() {
     log "INFO" "========== 5. 查询当前运营商+网络制式 =========="
 
     # 定义重试参数：最大重试5次，每次休眠3秒
-    local MAX_RETRY=5
+    local MAX_RETRY=20
     local RETRY_INTERVAL=10
     local retry_count=0
     local qnwinfo_resp="ERROR"
