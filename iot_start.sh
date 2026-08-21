@@ -1186,9 +1186,9 @@ main() {
     check_root
     check_at_port
 
-    systemctl stop connman
-    rm -rf /etc/resolv.conf
-    ifconfig eth0 down
+#    systemctl stop connman
+#    rm -rf /etc/resolv.conf
+#    ifconfig eth0 down
 
     check_ecm
 
