@@ -857,6 +857,58 @@
         <translation>关闭串口</translation>
     </message>
     <message>
+        <source>Test Board Version:</source>
+        <translation>测试板版本:</translation>
+    </message>
+    <message>
+        <source>Query Command:</source>
+        <translation>查询指令:</translation>
+    </message>
+    <message>
+        <source>0x01 Query Test Board Version</source>
+        <translation>0x01 查询测试板版本号</translation>
+    </message>
+    <message>
+        <source>0x02 VCC 12V/5V/3.3V (CN52)</source>
+        <translation>0x02 VCC_12V/5V/3.3V (CN52)</translation>
+    </message>
+    <message>
+        <source>0x03 Printer Power (CN43)</source>
+        <translation>0x03 打印机电源 (CN43)</translation>
+    </message>
+    <message>
+        <source>0x04 5V Control Output (CN39)</source>
+        <translation>0x04 5V控制输出 (CN39)</translation>
+    </message>
+    <message>
+        <source>0x05 12V Controlled Output (CN47)</source>
+        <translation>0x05 12V受控输出 (CN47)</translation>
+    </message>
+    <message>
+        <source>0x06 5V Proximity Switch (CN13)</source>
+        <translation>0x06 5V人体接近开关 (CN13)</translation>
+    </message>
+    <message>
+        <source>0x07 ST_INPUT1/2 IO Test</source>
+        <translation>0x07 ST_INPUT1/2 IO测试</translation>
+    </message>
+    <message>
+        <source>Send Query</source>
+        <translation>发送查询</translation>
+    </message>
+    <message>
+        <source>No query command selected</source>
+        <translation>未选择查询指令</translation>
+    </message>
+    <message>
+        <source>Please open serial port first</source>
+        <translation>请先打开串口</translation>
+    </message>
+    <message>
+        <source>Test board version: %1</source>
+        <translation>测试板版本: %1</translation>
+    </message>
+    <message>
         <source>Serial object is not available</source>
         <translation>串口对象不可用</translation>
     </message>

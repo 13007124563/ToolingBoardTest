@@ -8,6 +8,7 @@
 // 包含CSerialCommandWrapper以获取类型定义（Windows和Linux都需要）
 #include "CSerialCommandWrapper.h"
 #include "SerialManager.h"
+#include "protocol/protocolframe.h"
 
 #include "CommonType.h"
 
@@ -46,6 +47,8 @@ protected:
 
     void resetVersionInfo();
 
+    void resetBoardVersionInfo();
+
     void resetSimInfo();
 
     void resetIotInfo();
@@ -76,10 +79,13 @@ protected:
 
     // 串口选择与开关
     void initSerialPortUi();
+    void initBoardCommandCombo();
     void refreshSerialPorts();
     void updateOpenPortButton();
     bool openSelectedSerialPort();
     void closeSerialPort();
+    bool sendBuiltFrame(quint8 cmd, const QByteArray &info = QByteArray());
+    void sendSelectedBoardQuery();
 
     // 获取平台相关路径
     QString getLogFilePath() const;
@@ -138,6 +144,7 @@ protected slots:
 
     void on_btn_nor_reconnect_clicked();
     void on_btn_nor_open_port_clicked();
+    void on_btn_query_board_version_clicked();
 
     void onSerialPortOpened(const QString &portName);
     void onSerialPortClosed();
@@ -155,6 +162,8 @@ private:
     QString connect_msg_;               // 记录串口连接信息
 
     SerialManager m_serial;             // 主界面串口（QSerialPort，独立于 CSerialCommandWrapper）
+    Protocol::ProtocolCodec m_codec;    // RS485 帧编解码（测试板协议）
+    quint8 m_lastBoardQueryCmd = 0;     // 最近一次发送的治具查询命令
 
     // 跟踪当前执行中的按钮
     QPushButton* m_currentExecutingButton;

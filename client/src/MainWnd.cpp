@@ -18,6 +18,8 @@
 #include "AppModel.h"
 #include "commondefine.h"
 #include "protocol/protocolframe.h"
+#include "protocol/protocolconstants.h"
+#include "protocol/responseparser.h"
 
 #include <QProcess>
 #include <QFile>
@@ -284,6 +286,12 @@ void MainWnd::resetVersionInfo()
 {
     ui->lb_test_version->clear();
     ui->lb_test_version->setStyleSheet("");
+}
+
+void MainWnd::resetBoardVersionInfo()
+{
+    ui->lb_test_board_version->clear();
+    ui->lb_test_board_version->setStyleSheet("");
 }
 
 void MainWnd::resetSimInfo()
@@ -916,8 +924,29 @@ void MainWnd::initSerialPortUi()
     for (const QString& baud : baudRates)
         ui->cb_baudrate->addItem(baud, baud);
 
+    initBoardCommandCombo();
     refreshSerialPorts();
     updateOpenPortButton();
+}
+
+void MainWnd::initBoardCommandCombo()
+{
+    ui->cb_board_cmd->clear();
+    struct CmdItem {
+        quint8 cmd;
+        const char *label;
+    };
+    static const CmdItem items[] = {
+        { Protocol::CmdQueryVersion,      "0x01 Query Board Version" },
+        { Protocol::CmdVccCn52Test,       "0x02 VCC 12/5/3.3 (CN52)" },
+        { Protocol::CmdPrinterCn43Test,   "0x03 Printer Power (CN43)" },
+        { Protocol::CmdVout5vCn39Test,    "0x04 5V Ctl Output (CN39)" },
+        { Protocol::CmdVout12vCn47Test,   "0x05 12V Ctl Output (CN47)" },
+        { Protocol::CmdProximityCn13Test, "0x06 5V Proximity (CN13)" },
+        { Protocol::CmdStInputIoTest,     "0x07 ST_INPUT1/2 IO Test" },
+    };
+    for (const CmdItem &item : items)
+        ui->cb_board_cmd->addItem(tr(item.label), item.cmd);
 }
 
 void MainWnd::refreshSerialPorts()
@@ -965,6 +994,7 @@ void MainWnd::updateOpenPortButton()
     ui->btn_nor_open_port->setText(opened ? tr("Close Serial Port") : tr("Open Serial Port"));
     ui->cb_serial_port->setEnabled(!opened);
     ui->cb_baudrate->setEnabled(!opened);
+    ui->btn_query_board_version->setEnabled(opened);
 }
 
 bool MainWnd::openSelectedSerialPort()
@@ -1008,6 +1038,42 @@ void MainWnd::closeSerialPort()
     m_serial.closePort();
 }
 
+bool MainWnd::sendBuiltFrame(quint8 cmd, const QByteArray &info)
+{
+    if (!m_serial.isOpen()) {
+        const QString msg = tr("Please open serial port first");
+        SetConnectMsg(msg);
+        ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("[ERROR] %1").arg(msg));
+        return false;
+    }
+
+    // 测试治具协议：板地址固定 0x02，序号固定 0x01（与固件文档示例一致）
+    const quint8 boardAddr = Protocol::kTestBoardAddr;
+    const quint8 seq = Protocol::kTestBoardSeq;
+    const QByteArray frame = m_codec.buildRequest(boardAddr, seq, cmd, info);
+    return m_serial.sendFrame(frame, cmd, seq, boardAddr);
+}
+
+void MainWnd::sendSelectedBoardQuery()
+{
+    const QVariant cmdVar = ui->cb_board_cmd->currentData();
+    if (!cmdVar.isValid()) {
+        const QString msg = tr("No query command selected");
+        ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("[ERROR] %1").arg(msg));
+        return;
+    }
+
+    const quint8 cmd = static_cast<quint8>(cmdVar.toUInt());
+    m_lastBoardQueryCmd = cmd;
+
+    if (cmd == Protocol::CmdQueryVersion) {
+        ui->lb_test_board_version->clear();
+        ui->lb_test_board_version->setStyleSheet("");
+    }
+
+    sendBuiltFrame(cmd);
+}
+
 void MainWnd::on_btn_nor_open_port_clicked()
 {
     if (m_serial.isOpen()) {
@@ -1015,6 +1081,11 @@ void MainWnd::on_btn_nor_open_port_clicked()
         return;
     }
     openSelectedSerialPort();
+}
+
+void MainWnd::on_btn_query_board_version_clicked()
+{
+    sendSelectedBoardQuery();
 }
 
 void MainWnd::onSerialPortOpened(const QString &portName)
@@ -1055,6 +1126,14 @@ void MainWnd::onSerialFrameReceived(const Protocol::Frame &frame, const QString 
             .arg(frame.cmd, 2, 16, QChar('0'))
             .arg(Protocol::ProtocolCodec::frameToHex(frame.raw)));
     ui->lb_test_cmd_excute_return_msg->appendPlainText(parsedText);
+
+    if (frame.cmd == Protocol::CmdQueryVersion && frame.resp == Protocol::kRespUpOk) {
+        const QString ver = Protocol::ResponseParser::versionText(frame);
+        if (!ver.isEmpty()) {
+            ui->lb_test_board_version->setText(ver);
+            ui->lb_test_board_version->setStyleSheet("");
+        }
+    }
 }
 
 void MainWnd::onSerialPassiveFrameReceived(const Protocol::Frame &frame, const QString &reason)
@@ -1072,6 +1151,9 @@ void MainWnd::onSerialOperationTimeout()
 {
     ui->lb_test_cmd_excute_return_msg->appendPlainText(
         tr("[TIMEOUT] No matching response within %1 ms").arg(m_serial.timeoutMs()));
+    if (m_lastBoardQueryCmd == Protocol::CmdQueryVersion
+        && ui->lb_test_board_version->text().isEmpty())
+        setLabelFailed(ui->lb_test_board_version);
 }
 
 void MainWnd::auto_save_record()
@@ -1123,6 +1205,8 @@ void MainWnd::setInputsEnabled(bool enabled)
     ui->cb_serial_port->setEnabled(serialEditable);
     ui->cb_baudrate->setEnabled(serialEditable);
     ui->btn_nor_open_port->setEnabled(enabled);
+    ui->cb_board_cmd->setEnabled(enabled);
+    ui->btn_query_board_version->setEnabled(enabled && m_serial.isOpen());
 
     // 强制刷新界面
     ui->cb_module_type->update();
@@ -1130,6 +1214,7 @@ void MainWnd::setInputsEnabled(bool enabled)
     ui->le_net->update();
     ui->cb_serial_port->update();
     ui->cb_baudrate->update();
+    ui->cb_board_cmd->update();
 
     qDebug() << "[DEBUG] Input fields enabled:" << enabled;
 }
@@ -2271,6 +2356,7 @@ void MainWnd::doClearTestResult()
     // ui->cb_module_type->setCurrentIndex(0);  // 保留模块类型选择
 
     resetVersionInfo();
+    resetBoardVersionInfo();
     resetSimInfo();
     resetIotInfo();
     resetCmdResultInfo();

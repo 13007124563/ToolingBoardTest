@@ -1066,6 +1066,58 @@
         <translation>Test Execution Process:</translation>
     </message>
     <message>
+        <source>Test Board Version:</source>
+        <translation>Test Board Version:</translation>
+    </message>
+    <message>
+        <source>Query Command:</source>
+        <translation>Query Command:</translation>
+    </message>
+    <message>
+        <source>0x01 Query Test Board Version</source>
+        <translation>0x01 Query Test Board Version</translation>
+    </message>
+    <message>
+        <source>0x02 VCC 12V/5V/3.3V (CN52)</source>
+        <translation>0x02 VCC 12V/5V/3.3V (CN52)</translation>
+    </message>
+    <message>
+        <source>0x03 Printer Power (CN43)</source>
+        <translation>0x03 Printer Power (CN43)</translation>
+    </message>
+    <message>
+        <source>0x04 5V Control Output (CN39)</source>
+        <translation>0x04 5V Control Output (CN39)</translation>
+    </message>
+    <message>
+        <source>0x05 12V Controlled Output (CN47)</source>
+        <translation>0x05 12V Controlled Output (CN47)</translation>
+    </message>
+    <message>
+        <source>0x06 5V Proximity Switch (CN13)</source>
+        <translation>0x06 5V Proximity Switch (CN13)</translation>
+    </message>
+    <message>
+        <source>0x07 ST_INPUT1/2 IO Test</source>
+        <translation>0x07 ST_INPUT1/2 IO Test</translation>
+    </message>
+    <message>
+        <source>Send Query</source>
+        <translation>Send Query</translation>
+    </message>
+    <message>
+        <source>No query command selected</source>
+        <translation>No query command selected</translation>
+    </message>
+    <message>
+        <source>Please open serial port first</source>
+        <translation>Please open serial port first</translation>
+    </message>
+    <message>
+        <source>Test board version: %1</source>
+        <translation>Test board version: %1</translation>
+    </message>
+    <message>
         <location filename="client/src/MainWnd.ui" line="312"/>
         <source>font: 75 12pt &quot;微软雅黑&quot;; color: #333333; background: transparent; border: none;</source>
         <translation type="unfinished"></translation>

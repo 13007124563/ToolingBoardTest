@@ -4,52 +4,19 @@
 #include "protocolframe.h"
 
 #include <QString>
-#include <QVector>
 
 namespace Protocol {
-
-struct VersionInfo {
-    quint8 major = 0;
-    quint8 minor = 0;
-};
-
-struct CompartmentStatus {
-    quint8 statusFlags = 0;
-    quint8 faultFlags = 0;
-};
-
-struct UnlockTimeEntry {
-    int compartment = 0;
-    int resultCode = 0;
-    int timeMs = 0;
-};
-
-struct UnlockDelayEntry {
-    int compartment = 0;
-    int resultCode = 0;
-    int delayMs = 0;
-};
 
 class ResponseParser
 {
 public:
     static QString parse(const Frame &frame);
 
-    static void setDoorMagneticInverted(bool inverted);
-    static bool doorMagneticInverted();
+    // 从 0x01 应答 INFO 提取版本字符串（ASCII）
+    static QString versionText(const Frame &frame);
 
 private:
-    static bool s_doorMagneticInverted;
     static QString parseVersion(const Frame &frame);
-    static QString parseCompartmentStatus(const Frame &frame);
-    static QString parseSimpleAck(const Frame &frame, const QString &title);
-    static QString parseUnlockTime(const Frame &frame);
-    static QString parseUnlockDelay(const Frame &frame);
-    static QString parseDoorLock(const Frame &frame);
-
-    static QString formatStatusBits(quint8 flags);
-    static QString formatFaultBits(quint8 flags);
-    static QString formatUnlockResult(int code);
 };
 
 } // namespace Protocol

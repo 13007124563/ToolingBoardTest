@@ -11,15 +11,20 @@ static const quint8 kRespDown   = 0xFF;
 static const quint8 kRespUpOk   = 0x00;
 static const int    kDefaultTimeoutMs = 500;
 static const int    kDefaultBaudRate  = 9600;
-static const int    kMaxCompartment   = 22;
 
+// B60058A / B1024-01 测试板：板地址固定 0x02，包序号固定 0x01
+static const quint8 kTestBoardAddr = 0x02;
+static const quint8 kTestBoardSeq  = 0x01;
+
+// B1024-01 测试治具固件指令
 enum Command : quint8 {
-    CmdQueryVersion      = 0x01,
-    CmdQueryCompStatus   = 0x04,
-    CmdCompLight         = 0x08,
-    CmdQueryUnlockTime   = 0x11,
-    CmdQueryUnlockDelay  = 0x13,
-    CmdDoorLock          = 0x1E
+    CmdQueryVersion      = 0x01,  // 获取测试板版本号
+    CmdVccCn52Test       = 0x02,  // VCC_12V/5V/3.3V (CN52)
+    CmdPrinterCn43Test   = 0x03,  // 打印机电源 (CN43)
+    CmdVout5vCn39Test    = 0x04,  // 5V控制输出 (CN39)
+    CmdVout12vCn47Test   = 0x05,  // 12V受控输出 (CN47)
+    CmdProximityCn13Test = 0x06,  // 5V人体接近开关 (CN13)
+    CmdStInputIoTest     = 0x07,  // ST_INPUT1/2 IO (CN45/CN13)
 };
 
 inline quint8 makeAddress(quint8 boardAddr)
