@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui sql network
+QT       += core gui sql network serialport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -72,6 +72,10 @@ SOURCES += \
     common/api/DBConnector.cpp \
     common/api/GlobalSignal.cpp \
     common/api/JsonConfigurator.cpp \
+    common/api/SerialManager.cpp \
+    common/api/protocol/modbuscrc.cpp \
+    common/api/protocol/protocolframe.cpp \
+    common/api/protocol/responseparser.cpp \
     common/api/TestRecordManager.cpp
 
 
@@ -93,6 +97,11 @@ HEADERS += \
     common/api/JsonConfigurator.h \
     common/api/LogHandler.h \
     common/api/MyProxyStyle.h \
+    common/api/SerialManager.h \
+    common/api/protocol/modbuscrc.h \
+    common/api/protocol/protocolconstants.h \
+    common/api/protocol/protocolframe.h \
+    common/api/protocol/responseparser.h \
     common/api/TestRecordManager.h
 
 

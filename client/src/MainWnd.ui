@@ -95,6 +95,18 @@ QPushButton[objectName=&quot;btn_nor_record&quot;]:pressed
 	background-color: #00A042;
 }
 
+/* 白色按钮 - 打开/关闭串口 */
+QPushButton[objectName=&quot;btn_nor_open_port&quot;]
+{
+	background-color: #FFFFFF;
+	color: #005FA7;
+	border: 2px solid #005FA7;
+}
+QPushButton[objectName=&quot;btn_nor_open_port&quot;]:pressed
+{
+	background-color: #E8F2FA;
+}
+
 /* 白色按钮 - 清空测试结果 */
 QPushButton[objectName=&quot;btn_nor_clear&quot;]
 {
@@ -126,7 +138,7 @@ QPushButton:disabled
     border-radius: 10px;
 }
 
-#lb_module_type, #lb_apn_info, #lb_net_info {
+#lb_module_type, #lb_apn_info, #lb_net_info, #lb_serial_port, #lb_baudrate {
     font: 75 12pt "微软雅黑";
     color: #333333;
 }
@@ -192,26 +204,32 @@ QComboBox::down-arrow {
 }
 
 /* 蓝色信息区滚动条样式 */
-#scrollArea_Info {
+#scrollArea_Info,
+#scrollArea_Left {
     background: transparent;
     border: none;
 }
-#scrollAreaWidgetContents {
+#scrollAreaWidgetContents,
+#scrollAreaWidgetContents_Left {
     background: transparent;
 }
-#scrollArea_Info QScrollBar:vertical {
+#scrollArea_Info QScrollBar:vertical,
+#scrollArea_Left QScrollBar:vertical {
     width: 16px;
     margin: 0px;
     background: transparent;
 }
-#scrollArea_Info QScrollBar::handle:vertical {
+#scrollArea_Info QScrollBar::handle:vertical,
+#scrollArea_Left QScrollBar::handle:vertical {
     min-height: 20px;
     margin: 0px 2px;
     border-radius: 4px;
     background: #C0C0C0;
 }
 #scrollArea_Info QScrollBar::add-line:vertical,
-#scrollArea_Info QScrollBar::sub-line:vertical {
+#scrollArea_Info QScrollBar::sub-line:vertical,
+#scrollArea_Left QScrollBar::add-line:vertical,
+#scrollArea_Left QScrollBar::sub-line:vertical {
     height: 0px;
 }
 #wnd_process_fixed {
@@ -248,7 +266,38 @@ QComboBox::down-arrow {
           <height>16777215</height>
          </size>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout_Left">
+        <layout class="QVBoxLayout" name="verticalLayout_LeftPanel">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <property name="leftMargin"><number>0</number></property>
+         <property name="topMargin"><number>0</number></property>
+         <property name="rightMargin"><number>0</number></property>
+         <property name="bottomMargin"><number>0</number></property>
+         <item>
+          <widget class="QScrollArea" name="scrollArea_Left">
+           <property name="widgetResizable">
+            <bool>true</bool>
+           </property>
+           <property name="frameShape">
+            <enum>QFrame::NoFrame</enum>
+           </property>
+           <property name="horizontalScrollBarPolicy">
+            <enum>Qt::ScrollBarAlwaysOff</enum>
+           </property>
+           <property name="verticalScrollBarPolicy">
+            <enum>Qt::ScrollBarAsNeeded</enum>
+           </property>
+           <widget class="QWidget" name="scrollAreaWidgetContents_Left">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>0</y>
+              <width>260</width>
+              <height>700</height>
+             </rect>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_Left">
          <property name="spacing">
           <number>10</number>
          </property>
@@ -286,6 +335,22 @@ QComboBox::down-arrow {
             </widget>
          </item>
          <item>
+            <widget class="QLabel" name="lb_serial_port"><property name="text"><string>Serial Port:</string></property></widget>
+         </item>
+         <item>
+            <widget class="QComboBox" name="cb_serial_port">
+                <property name="minimumSize"><size><width>0</width><height>40</height></size></property>
+            </widget>
+         </item>
+         <item>
+            <widget class="QLabel" name="lb_baudrate"><property name="text"><string>Baudrate:</string></property></widget>
+         </item>
+         <item>
+            <widget class="QComboBox" name="cb_baudrate">
+                <property name="minimumSize"><size><width>0</width><height>40</height></size></property>
+            </widget>
+         </item>
+         <item>
              <spacer name="verticalSpacer_Buttons">
                  <property name="orientation"><enum>Qt::Vertical</enum></property>
                  <property name="sizeType"><enum>QSizePolicy::Fixed</enum></property>
@@ -297,9 +362,12 @@ QComboBox::down-arrow {
          <item><widget class="QPushButton" name="btn_nor_all_test"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>One-key Test</string></property></widget></item>
          <item><widget class="QPushButton" name="btn_nor_record"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Test Record</string></property></widget></item>
          
-         <item><spacer name="verticalSpacer_Bottom"><property name="orientation"><enum>Qt::Vertical</enum></property><property name="sizeHint" stdset="0"><size><width>20</width><height>40</height></size></property></spacer></item>
-         
+         <item><widget class="QPushButton" name="btn_nor_open_port"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Open Serial Port</string></property></widget></item>
          <item><widget class="QPushButton" name="btn_nor_clear"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Clear Test Result</string></property></widget></item>
+            </layout>
+           </widget>
+          </widget>
+         </item>
         </layout>
        </widget>
       </item>

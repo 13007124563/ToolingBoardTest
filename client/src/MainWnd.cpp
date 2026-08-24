@@ -17,6 +17,7 @@
 #include "TestRecordManager.h"
 #include "AppModel.h"
 #include "commondefine.h"
+#include "protocol/protocolframe.h"
 
 #include <QProcess>
 #include <QFile>
@@ -105,12 +106,20 @@ MainWnd::MainWnd(QWidget *parent) :
         ui->scrollArea_Info->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Ignored);
         ui->scrollArea_Info->setWidgetResizable(true);
     }
+    if (ui->scrollArea_Left) {
+        ui->scrollArea_Left->setMinimumHeight(0);
+        ui->scrollArea_Left->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+        ui->scrollArea_Left->setWidgetResizable(true);
+    }
 
     // 初始化脚本路径（与可执行文件同级目录）
     m_scriptPath = QCoreApplication::applicationDirPath() + "/iot_start.sh";
 
     // 初始化模块类型下拉框
     initModuleTypeComboBox();
+
+    // 初始化串口/波特率选择
+    initSerialPortUi();
 
     // 加载APN和NET历史记录
     loadApnNetHistory();
@@ -216,6 +225,7 @@ void MainWnd::lang_change()
     SetCabinetInfo(APPMODEL()->Version());
 
     SetConnectMsg(connect_msg_);
+    updateOpenPortButton();
 
     // 更新 APN/NET 占位符文本（双语言）
     bool isCn = (APPMODEL()->CabinetLanguage() == zl::ELanguageType_Cn);
@@ -255,6 +265,13 @@ void MainWnd::SetConnectMsg(const QString& info)
 {
     connect_msg_ = info;
     // ui->lb_connect_msg->setText(info);
+    updateOpenPortButton();
+}
+
+void MainWnd::SyncSerialPortUi()
+{
+    refreshSerialPorts();
+    updateOpenPortButton();
 }
 
 void MainWnd::resetCmdResultInfo()
@@ -881,6 +898,182 @@ void MainWnd::on_btn_nor_reconnect_clicked()
     // Function removed per UI requirements
 }
 
+void MainWnd::initSerialPortUi()
+{
+    connect(&m_serial, &SerialManager::portOpened, this, &MainWnd::onSerialPortOpened);
+    connect(&m_serial, &SerialManager::portClosed, this, &MainWnd::onSerialPortClosed);
+    connect(&m_serial, &SerialManager::errorOccurred, this, &MainWnd::onSerialError);
+    connect(&m_serial, &SerialManager::frameSent, this, &MainWnd::onSerialFrameSent);
+    connect(&m_serial, &SerialManager::frameReceived, this, &MainWnd::onSerialFrameReceived);
+    connect(&m_serial, &SerialManager::passiveFrameReceived, this, &MainWnd::onSerialPassiveFrameReceived);
+    connect(&m_serial, &SerialManager::operationTimeout, this, &MainWnd::onSerialOperationTimeout);
+
+    m_serial.setTimeoutMs(Protocol::kDefaultTimeoutMs);
+
+    ui->cb_baudrate->clear();
+    const QStringList baudRates = QStringList()
+        << "9600" << "115200";
+    for (const QString& baud : baudRates)
+        ui->cb_baudrate->addItem(baud, baud);
+
+    refreshSerialPorts();
+    updateOpenPortButton();
+}
+
+void MainWnd::refreshSerialPorts()
+{
+    const QString currentPort = ui->cb_serial_port->currentData().toString();
+    ui->cb_serial_port->clear();
+
+    QStringList ports = m_serial.availablePorts();
+    // 枚举为空时保留 COM1~COM30，便于无设备时仍可选择（与后台高级页一致）
+    if (ports.isEmpty()) {
+        for (int i = 1; i <= 30; ++i)
+            ports << QString("COM%1").arg(i);
+    }
+
+    for (const QString& portName : ports)
+        ui->cb_serial_port->addItem(portName, portName);
+
+    const auto serialConfig = APPMODEL()->Config().serial_config;
+    QString preferPort = currentPort.isEmpty() ? serialConfig.port : currentPort;
+    if (!preferPort.isEmpty()) {
+        const int idx = ui->cb_serial_port->findData(preferPort);
+        if (idx >= 0)
+            ui->cb_serial_port->setCurrentIndex(idx);
+    }
+
+    if (!serialConfig.baud_rate.isEmpty()) {
+        const int baudIdx = ui->cb_baudrate->findData(serialConfig.baud_rate);
+        if (baudIdx >= 0)
+            ui->cb_baudrate->setCurrentIndex(baudIdx);
+        else {
+            const int defaultIdx = ui->cb_baudrate->findData(QStringLiteral("9600"));
+            if (defaultIdx >= 0)
+                ui->cb_baudrate->setCurrentIndex(defaultIdx);
+        }
+    } else {
+        const int defaultIdx = ui->cb_baudrate->findData(QStringLiteral("9600"));
+        if (defaultIdx >= 0)
+            ui->cb_baudrate->setCurrentIndex(defaultIdx);
+    }
+}
+
+void MainWnd::updateOpenPortButton()
+{
+    const bool opened = m_serial.isOpen();
+    ui->btn_nor_open_port->setText(opened ? tr("Close Serial Port") : tr("Open Serial Port"));
+    ui->cb_serial_port->setEnabled(!opened);
+    ui->cb_baudrate->setEnabled(!opened);
+}
+
+bool MainWnd::openSelectedSerialPort()
+{
+    const QString port = ui->cb_serial_port->currentData().toString().trimmed();
+    const QString baudText = ui->cb_baudrate->currentData().toString().trimmed();
+    bool ok = false;
+    const int baud = baudText.toInt(&ok);
+
+    if (port.isEmpty()) {
+        const QString msg = tr("No serial port selected");
+        SetConnectMsg(msg);
+        ui->lb_test_cmd_excute_return_msg->appendPlainText(msg);
+        return false;
+    }
+    if (!ok || baud <= 0) {
+        const QString msg = tr("Invalid baudrate: %1").arg(baudText);
+        SetConnectMsg(msg);
+        ui->lb_test_cmd_excute_return_msg->appendPlainText(msg);
+        return false;
+    }
+
+    if (!m_serial.openPort(port, baud)) {
+        // 具体错误由 onSerialError 展示
+        updateOpenPortButton();
+        return false;
+    }
+
+    // 写回配置，与后台高级页保持一致
+    auto config = APPMODEL()->Config();
+    config.serial_config.port = port;
+    config.serial_config.baud_rate = baudText;
+    APPMODEL()->SetConfig(config);
+    APPMODEL()->SaveAppConfiguration();
+
+    return true;
+}
+
+void MainWnd::closeSerialPort()
+{
+    m_serial.closePort();
+}
+
+void MainWnd::on_btn_nor_open_port_clicked()
+{
+    if (m_serial.isOpen()) {
+        closeSerialPort();
+        return;
+    }
+    openSelectedSerialPort();
+}
+
+void MainWnd::onSerialPortOpened(const QString &portName)
+{
+    const QString baudText = ui->cb_baudrate->currentData().toString();
+    const QString msg = tr("Serial %1, baudrate %2, connect success").arg(portName, baudText);
+    SetConnectMsg(msg);
+    ui->lb_test_cmd_excute_return_msg->appendPlainText(msg);
+    updateOpenPortButton();
+}
+
+void MainWnd::onSerialPortClosed()
+{
+    const QString msg = tr("Serial port closed");
+    SetConnectMsg(msg);
+    ui->lb_test_cmd_excute_return_msg->appendPlainText(msg);
+    updateOpenPortButton();
+}
+
+void MainWnd::onSerialError(const QString &message)
+{
+    SetConnectMsg(message);
+    ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("[ERROR] %1").arg(message));
+    updateOpenPortButton();
+}
+
+void MainWnd::onSerialFrameSent(const QByteArray &frame)
+{
+    ui->lb_test_cmd_excute_return_msg->appendPlainText(
+        tr("[TX] %1").arg(Protocol::ProtocolCodec::frameToHex(frame)));
+}
+
+void MainWnd::onSerialFrameReceived(const Protocol::Frame &frame, const QString &parsedText)
+{
+    ui->lb_test_cmd_excute_return_msg->appendPlainText(
+        tr("[RX match] seq=%1 cmd=0x%2 %3")
+            .arg(frame.seq)
+            .arg(frame.cmd, 2, 16, QChar('0'))
+            .arg(Protocol::ProtocolCodec::frameToHex(frame.raw)));
+    ui->lb_test_cmd_excute_return_msg->appendPlainText(parsedText);
+}
+
+void MainWnd::onSerialPassiveFrameReceived(const Protocol::Frame &frame, const QString &reason)
+{
+    ui->lb_test_cmd_excute_return_msg->appendPlainText(
+        tr("[RX passive] seq=%1 cmd=0x%2 resp=0x%3 %4 (%5)")
+            .arg(frame.seq)
+            .arg(frame.cmd, 2, 16, QChar('0'))
+            .arg(frame.resp, 2, 16, QChar('0'))
+            .arg(Protocol::ProtocolCodec::frameToHex(frame.raw))
+            .arg(reason));
+}
+
+void MainWnd::onSerialOperationTimeout()
+{
+    ui->lb_test_cmd_excute_return_msg->appendPlainText(
+        tr("[TIMEOUT] No matching response within %1 ms").arg(m_serial.timeoutMs()));
+}
+
 void MainWnd::auto_save_record()
 {
     if (record_.sim_test == 0 && record_.iot_test == 0 && record_.simiot_test == 0)
@@ -925,10 +1118,18 @@ void MainWnd::setInputsEnabled(bool enabled)
     ui->le_apn->setEnabled(enabled);
     ui->le_net->setEnabled(enabled);
 
+    // 串口打开时不允许改端口/波特率（使用独立 SerialManager）
+    const bool serialEditable = enabled && !m_serial.isOpen();
+    ui->cb_serial_port->setEnabled(serialEditable);
+    ui->cb_baudrate->setEnabled(serialEditable);
+    ui->btn_nor_open_port->setEnabled(enabled);
+
     // 强制刷新界面
     ui->cb_module_type->update();
     ui->le_apn->update();
     ui->le_net->update();
+    ui->cb_serial_port->update();
+    ui->cb_baudrate->update();
 
     qDebug() << "[DEBUG] Input fields enabled:" << enabled;
 }

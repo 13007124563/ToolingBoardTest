@@ -558,6 +558,10 @@
         <translation>串口 %1, 波特率 %2, 连接失败</translation>
     </message>
     <message>
+        <source>Serial %1, baudrate %2, connect success</source>
+        <translation>串口 %1, 波特率 %2, 连接成功</translation>
+    </message>
+    <message>
         <source>（版本：V%1）</source>
         <translation type="vanished">（版本：V%1）</translation>
     </message>
@@ -827,6 +831,54 @@
     <message>
         <source>Clear Test Result</source>
         <translation>清空测试结果</translation>
+    </message>
+    <message>
+        <source>NET:</source>
+        <translation>NET:</translation>
+    </message>
+    <message>
+        <source>Serial Port:</source>
+        <translation>串口:</translation>
+    </message>
+    <message>
+        <source>Baudrate:</source>
+        <translation>波特率:</translation>
+    </message>
+    <message>
+        <source>APN:</source>
+        <translation>APN:</translation>
+    </message>
+    <message>
+        <source>Open Serial Port</source>
+        <translation>打开串口</translation>
+    </message>
+    <message>
+        <source>Close Serial Port</source>
+        <translation>关闭串口</translation>
+    </message>
+    <message>
+        <source>Serial object is not available</source>
+        <translation>串口对象不可用</translation>
+    </message>
+    <message>
+        <source>No serial port selected</source>
+        <translation>未选择串口</translation>
+    </message>
+    <message>
+        <source>Invalid baudrate: %1</source>
+        <translation>无效波特率: %1</translation>
+    </message>
+    <message>
+        <source>Serial %1, baudrate %2, connect failed</source>
+        <translation>串口 %1, 波特率 %2, 连接失败</translation>
+    </message>
+    <message>
+        <source>Serial %1, baudrate %2, connect success</source>
+        <translation>串口 %1, 波特率 %2, 连接成功</translation>
+    </message>
+    <message>
+        <source>Serial port closed</source>
+        <translation>串口已关闭</translation>
     </message>
     <message>
         <source>Sim card test needs few minutes</source>

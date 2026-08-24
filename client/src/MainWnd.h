@@ -7,6 +7,7 @@
 
 // 包含CSerialCommandWrapper以获取类型定义（Windows和Linux都需要）
 #include "CSerialCommandWrapper.h"
+#include "SerialManager.h"
 
 #include "CommonType.h"
 
@@ -36,6 +37,9 @@ public:
 
     // 传入串口连接信息
     void SetConnectMsg(const QString& info);
+
+    // 同步串口下拉与打开状态（配置变更/重连后调用）
+    void SyncSerialPortUi();
 protected:
 
     void resetCmdResultInfo();
@@ -69,6 +73,13 @@ protected:
 
     // 设置按钮执行状态的颜色
     void setButtonExecuting(QPushButton* button, bool executing);
+
+    // 串口选择与开关
+    void initSerialPortUi();
+    void refreshSerialPorts();
+    void updateOpenPortButton();
+    bool openSelectedSerialPort();
+    void closeSerialPort();
 
     // 获取平台相关路径
     QString getLogFilePath() const;
@@ -126,6 +137,15 @@ protected slots:
     void on_btn_nor_record_clicked();
 
     void on_btn_nor_reconnect_clicked();
+    void on_btn_nor_open_port_clicked();
+
+    void onSerialPortOpened(const QString &portName);
+    void onSerialPortClosed();
+    void onSerialError(const QString &message);
+    void onSerialFrameSent(const QByteArray &frame);
+    void onSerialFrameReceived(const Protocol::Frame &frame, const QString &parsedText);
+    void onSerialPassiveFrameReceived(const Protocol::Frame &frame, const QString &reason);
+    void onSerialOperationTimeout();
 
 private:
     Ui::MainWnd *ui;
@@ -133,6 +153,8 @@ private:
     zl::RecordInfo record_;
 
     QString connect_msg_;               // 记录串口连接信息
+
+    SerialManager m_serial;             // 主界面串口（QSerialPort，独立于 CSerialCommandWrapper）
 
     // 跟踪当前执行中的按钮
     QPushButton* m_currentExecutingButton;

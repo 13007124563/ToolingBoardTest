@@ -593,7 +593,11 @@
     <message>
         <location filename="client/src/MainApp.cpp" line="200"/>
         <source>Serial %1, baudrate %2, connect failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Serial %1, baudrate %2, connect failed</translation>
+    </message>
+    <message>
+        <source>Serial %1, baudrate %2, connect success</source>
+        <translation>Serial %1, baudrate %2, connect success</translation>
     </message>
     <message>
         <location filename="client/src/MainApp.cpp" line="304"/>
@@ -962,6 +966,14 @@
         <translation>NET:</translation>
     </message>
     <message>
+        <source>Serial Port:</source>
+        <translation>Serial Port:</translation>
+    </message>
+    <message>
+        <source>Baudrate:</source>
+        <translation>Baudrate:</translation>
+    </message>
+    <message>
         <location filename="client/src/MainWnd.ui" line="252"/>
         <source>Image Version</source>
         <translation>Image Version</translation>
@@ -977,9 +989,41 @@
         <translation>Test Record</translation>
     </message>
     <message>
+        <source>Open Serial Port</source>
+        <translation>Open Serial Port</translation>
+    </message>
+    <message>
+        <source>Close Serial Port</source>
+        <translation>Close Serial Port</translation>
+    </message>
+    <message>
         <location filename="client/src/MainWnd.ui" line="258"/>
         <source>Clear Test Result</source>
         <translation>Clear Test Result</translation>
+    </message>
+    <message>
+        <source>Serial object is not available</source>
+        <translation>Serial object is not available</translation>
+    </message>
+    <message>
+        <source>No serial port selected</source>
+        <translation>No serial port selected</translation>
+    </message>
+    <message>
+        <source>Invalid baudrate: %1</source>
+        <translation>Invalid baudrate: %1</translation>
+    </message>
+    <message>
+        <source>Serial %1, baudrate %2, connect failed</source>
+        <translation>Serial %1, baudrate %2, connect failed</translation>
+    </message>
+    <message>
+        <source>Serial %1, baudrate %2, connect success</source>
+        <translation>Serial %1, baudrate %2, connect success</translation>
+    </message>
+    <message>
+        <source>Serial port closed</source>
+        <translation>Serial port closed</translation>
     </message>
     <message>
         <location filename="client/src/MainWnd.ui" line="278"/>

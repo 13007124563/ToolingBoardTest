@@ -50,12 +50,15 @@ void MainApp::Release()
 MainApp::MainApp()
 : base_widget_(new QStackedWidget)
 , container_(new QStackedWidget)
-, main_wnd_(new MainWnd)
-, banner_wnd_(new BannerWnd)
-, backend_wnd_(new BackendWnd)
+, main_wnd_(nullptr)
+, banner_wnd_(nullptr)
+, backend_wnd_(nullptr)
 , m_workflow_status(EWF_Unknow)
 , serial_connect_(Q_NULLPTR)
 {
+    // 先登记单例，避免子窗口构造时 Instance() 再次 new
+    Instance_ = this;
+
     qDebug() << "[NEED]" << "****** Start Application ******";
     base_widget_->setWindowFlags(Qt::FramelessWindowHint);
     base_widget_->installEventFilter(this);
@@ -66,6 +69,10 @@ MainApp::MainApp()
 
     init_configuration();
     init_database();
+
+    main_wnd_ = new MainWnd;
+    banner_wnd_ = new BannerWnd;
+    backend_wnd_ = new BackendWnd;
 
     init_serial_connect();
 
