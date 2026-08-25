@@ -35,6 +35,8 @@
 #include <QLabel>
 #include <QScrollArea>
 #include <QSizePolicy>
+#include <QComboBox>
+#include <QEvent>
 
 // 测试执行中半透明遮罩小工具类
 class TestProgressWidget : public QWidget {
@@ -73,6 +75,9 @@ MainWnd::MainWnd(QWidget *parent) :
 {
 
     ui->setupUi(this);
+
+    // 下拉框禁用滚轮切换选项，仅支持点击选择
+    disableComboBoxWheelSelection();
 
     // 右侧布局：蓝色滚动区拉伸占满剩余空间，绿色过程区保持固定高度
     if (ui->verticalLayout_Right) {
@@ -184,6 +189,20 @@ MainWnd::MainWnd(QWidget *parent) :
     QObject::connect(GlobalSignal::getInstance(), &GlobalSignal::switchLanguage, this, &MainWnd::lang_change);
 
     QObject::connect(GlobalSignal::getInstance(), &GlobalSignal::user_confirm, this, &MainWnd::event_user_confirm);
+}
+
+void MainWnd::disableComboBoxWheelSelection()
+{
+    const QList<QComboBox *> combos = findChildren<QComboBox *>();
+    for (QComboBox *combo : combos)
+        combo->installEventFilter(this);
+}
+
+bool MainWnd::eventFilter(QObject *watched, QEvent *event)
+{
+    if (event->type() == QEvent::Wheel && qobject_cast<QComboBox *>(watched))
+        return true;
+    return QWidget::eventFilter(watched, event);
 }
 
 MainWnd::~MainWnd()

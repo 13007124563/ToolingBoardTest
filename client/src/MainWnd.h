@@ -42,6 +42,9 @@ public:
     // 同步串口下拉与打开状态（配置变更/重连后调用）
     void SyncSerialPortUi();
 protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
+    void disableComboBoxWheelSelection();
 
     void resetCmdResultInfo();
 
