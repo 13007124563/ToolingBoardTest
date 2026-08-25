@@ -74,7 +74,8 @@ enum ETestType {
     ETestType_Sim                = 0,
     ETestType_Iot                = 1,
     ETestType_SimIot             = 2,
-    ETestType_RomVer             = 3
+    ETestType_RomVer             = 3,
+    ETestType_Serial             = 4
 };
 
 /* result type */ // corresponding with CommandResultType
@@ -181,6 +182,7 @@ struct RecordInfo
     int32_t                         sim_test;
     int32_t                         iot_test;
     int32_t                         simiot_test;
+    int32_t                         serial_test;
     QString                         test_time;          // 测试时间
     EResultType                     result_type;
     QString                         cmd_ret_info;       // 指令回应信息
@@ -206,6 +208,7 @@ struct RecordInfo
         sim_test = 0;
         iot_test = 0;
         simiot_test = 0;
+        serial_test = 0;
 
         test_time = "";
         result_type = EResultType_Unknow;

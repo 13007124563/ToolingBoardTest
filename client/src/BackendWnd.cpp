@@ -39,6 +39,7 @@
 #include "TestRecordManager.h"
 #include "DBConnector.h"
 #include "MsgWnd.h"
+#include "protocol/protocolconstants.h"
 
 #include <QFileDialog>
 #include <QTextStream>
@@ -122,8 +123,10 @@ BackendWnd::BackendWnd(QWidget *parent) :
   , btnGpRecordSel(nullptr)
   , model_sim_record_result_(new QStandardItemModel)
   , model_iot_record_result_(new QStandardItemModel)
+  , model_serial_record_result_(new QStandardItemModel)
   , sim_header_checkbox_(nullptr)
   , iot_header_checkbox_(nullptr)
+  , serial_header_checkbox_(nullptr)
   , completer_sim_page_sim_iccid(new QCompleter(this))
   , completer_sim_page_firmware_version(new QCompleter(this))
   , completer_iot_page_iot_module_id(new QCompleter(this))
@@ -145,6 +148,7 @@ BackendWnd::~BackendWnd()
 
     sim_record_vec_.clear();
     iot_record_vec_.clear();
+    serial_record_vec_.clear();
 
     if (btnGpBackendSel)
         disconnect(btnGpBackendSel, nullptr, this, nullptr);
@@ -176,6 +180,12 @@ BackendWnd::~BackendWnd()
         model_iot_record_result_ = Q_NULLPTR;
     }
 
+    if (model_serial_record_result_)
+    {
+        delete model_serial_record_result_;
+        model_serial_record_result_ = Q_NULLPTR;
+    }
+
     delete ui;
 }
 
@@ -187,6 +197,7 @@ void BackendWnd::lang_change()
 
     init_sim_page_combo_normal();
     init_iot_page_combo_normal();
+    init_serial_page_combo_normal();
 }
 
 void BackendWnd::ShowBackendPage()
@@ -330,7 +341,55 @@ void BackendWnd::init_table_view()
     iot_header_checkbox_->raise();
     
     qDebug() << "[DEBUG] IOT table initialized with columns:" << list_iot_record;
+
+    // 串口测试记录查询结果列表
+    QStringList list_serial_record = { "", tr("Serial Number"), tr("Command"), tr("Test Result"), tr("Test Time"), tr("Operation")};
+    const bool isCn = (APPMODEL()->CabinetLanguage() == zl::ELanguageType_Cn);
+    if (isCn) {
+        list_serial_record = QStringList() << "" << QStringLiteral("流水号") << QStringLiteral("命令字")
+                                           << QStringLiteral("测试结果") << QStringLiteral("测试时间") << QStringLiteral("操作");
+    }
+    QVector<int> widths_serial_record = {50, 190, 160, 280, 200, 90};
+
+    TableHelper::initTableHeader(list_serial_record, widths_serial_record, model_serial_record_result_, ui->tb_serial_record_result);
+
+    ui->tb_serial_record_result->setSelectionMode(QAbstractItemView::NoSelection);
+    ui->tb_serial_record_result->horizontalHeader()->setFixedHeight(40);
+    ui->tb_serial_record_result->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
+    ui->tb_serial_record_result->horizontalHeader()->setSectionResizeMode(5, QHeaderView::Fixed);
+    ui->tb_serial_record_result->horizontalHeader()->resizeSection(5, 90);
+    ui->tb_serial_record_result->verticalHeader()->setVisible(false);
+    ui->tb_serial_record_result->setItemDelegateForColumn(0, new CheckboxDelegate(this));
+    ui->tb_serial_record_result->setStyleSheet("");
+
+    if (!serial_header_checkbox_) {
+        qDebug() << "[DEBUG] Serial header checkbox created (first init)";
+        serial_header_checkbox_ = new QCheckBox(ui->tb_serial_record_result->horizontalHeader());
+        serial_header_checkbox_->setGeometry(15, 11, 25, 25);
+        serial_header_checkbox_->setStyleSheet(
+            "QCheckBox::indicator { "
+            "   width: 18px; "
+            "   height: 18px; "
+            "   border: 2px solid #999999; "
+            "   background-color: #FFFFFF; "
+            "   border-radius: 3px; "
+            "} "
+            "QCheckBox::indicator:checked { "
+            "   background-color: #005FA7; "
+            "   border: 2px solid #005FA7; "
+            "} "
+            "QCheckBox::indicator:hover { "
+            "   border: 2px solid #005FA7; "
+            "}"
+        );
+        connect(serial_header_checkbox_, &QCheckBox::clicked, this, &BackendWnd::on_serial_header_checkbox_clicked);
+    }
+    serial_header_checkbox_->show();
+    serial_header_checkbox_->raise();
+
+    qDebug() << "[DEBUG] Serial table initialized with columns:" << list_serial_record;
 }
+
 
 void BackendWnd::initSelectPage()
 {
@@ -357,6 +416,7 @@ void BackendWnd::init_record_page()
     btnGpRecordSel = new QButtonGroup(this);
     btnGpRecordSel->addButton(ui->btn_navi_sim, 0);
     btnGpRecordSel->addButton(ui->btn_navi_iot, 1);
+    btnGpRecordSel->addButton(ui->btn_navi_serial, 2);
 
     // Qt 6 只支持 idClicked, Qt 5.15+ 也支持 idClicked
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
@@ -394,6 +454,13 @@ void BackendWnd::init_record_page()
             on_tb_iot_record_result_doubleClicked(index);
         }
     });
+
+    // 连接串口测试表格单击事件，支持点击"查看报告"列
+    connect(ui->tb_serial_record_result, &QTableView::clicked, this, [this](const QModelIndex& index) {
+        if (index.isValid() && index.column() == 5) {
+            on_tb_serial_record_result_doubleClicked(index);
+        }
+    });
     
     // Default
     ui->btn_navi_sim->click();
@@ -406,6 +473,8 @@ void BackendWnd::init_record_page()
 
     init_sim_page_time_select();
     init_iot_page_time_select();
+    init_serial_page_time_select();
+    init_serial_page_combo_normal();
 }
 
 
@@ -585,6 +654,9 @@ void BackendWnd::event_navi_btn_clicked(int index)
     } else if (index == 1) {
         qDebug() << "[DEBUG] IOT table column count:" << model_iot_record_result_->columnCount();
         qDebug() << "[DEBUG] IOT table row count:" << model_iot_record_result_->rowCount();
+    } else if (index == 2) {
+        qDebug() << "[DEBUG] Serial table column count:" << model_serial_record_result_->columnCount();
+        qDebug() << "[DEBUG] Serial table row count:" << model_serial_record_result_->rowCount();
     }
 }
 
@@ -1052,8 +1124,10 @@ void BackendWnd::event_user_confirm(const QString& token)
 
     if (pending_delete_type_ == "sim")
         on_btn_sim_record_query_clicked();
-    else
+    else if (pending_delete_type_ == "iot")
         on_btn_iot_record_query_clicked();
+    else
+        on_btn_serial_record_query_clicked();
 
     pending_delete_type_.clear();
 }
@@ -1298,6 +1372,332 @@ void BackendWnd::on_iot_header_checkbox_clicked(bool checked)
     int row_count = model_iot_record_result_->rowCount();
     for (int i = 0; i < row_count; ++i) {
         QStandardItem* item = model_iot_record_result_->item(i, 0);
+        if (item && item->isCheckable()) {
+            item->setCheckState(checked ? Qt::Checked : Qt::Unchecked);
+        }
+    }
+}
+
+void BackendWnd::init_serial_page_time_select()
+{
+    // 默认查询今天到明天的记录
+    QDateTime today = QDateTime::currentDateTime();
+    today.setTime(QTime(0, 0, 0));
+    ui->edt_serial_record_begin_date->setDateTime(today);
+    ui->edt_serial_record_end_date->setDateTime(today.addDays(1));
+}
+
+void BackendWnd::init_serial_page_combo_normal()
+{
+    const bool isCn = (APPMODEL()->CabinetLanguage() == zl::ELanguageType_Cn);
+
+    ui->btn_navi_serial->setText(isCn ? QStringLiteral("串口测试") : QStringLiteral("Serial Port Test"));
+    ui->lb_serial_record_cmd->setText(isCn ? QStringLiteral("命令字:") : QStringLiteral("Command:"));
+    ui->lb_serial_record_result->setText(isCn ? QStringLiteral("测试结果:") : QStringLiteral("Test Result:"));
+
+    ui->combo_serial_record_cmd->clear();
+    ui->combo_serial_record_cmd->addItem(isCn ? QStringLiteral("全部") : QStringLiteral("All"), -1);
+
+    struct CmdItem {
+        quint8 cmd;
+        const char *label;
+    };
+    static const CmdItem items[] = {
+        { Protocol::CmdQueryVersion,      "0x01 Query Board Version" },
+        { Protocol::CmdVccCn52Test,       "0x02 VCC 12/5/3.3 (CN52)" },
+        { Protocol::CmdPrinterCn43Test,   "0x03 Printer Power (CN43)" },
+        { Protocol::CmdVout5vCn39Test,    "0x04 5V Ctl Output (CN39)" },
+        { Protocol::CmdVout12vCn47Test,   "0x05 12V Ctl Output (CN47)" },
+        { Protocol::CmdProximityCn13Test, "0x06 5V Proximity (CN13)" },
+        { Protocol::CmdStInputIoTest,     "0x07 ST_INPUT1/2 IO Test" },
+    };
+    for (const CmdItem &item : items)
+        ui->combo_serial_record_cmd->addItem(QString::fromLatin1(item.label), static_cast<int>(item.cmd));
+
+    ui->combo_serial_record_result->clear();
+    ui->combo_serial_record_result->addItem(isCn ? QStringLiteral("全部") : QStringLiteral("All"), -1);
+    ui->combo_serial_record_result->addItem(isCn ? QStringLiteral("成功") : QStringLiteral("Success"), 1);
+    ui->combo_serial_record_result->addItem(isCn ? QStringLiteral("失败") : QStringLiteral("Failure"), 0);
+}
+
+void BackendWnd::on_btn_serial_record_query_clicked()
+{
+    QDate beginDate = ui->edt_serial_record_begin_date->date();
+    QDate endDateExclusive = ui->edt_serial_record_end_date->date().addDays(1);
+    QString begdt = beginDate.toString("yyyy-MM-dd") + " 00:00:00";
+    QString enddt = endDateExclusive.toString("yyyy-MM-dd") + " 00:00:00";
+
+    ETestType test_type = ETestType_Serial;
+
+    const int selectedCmd = ui->combo_serial_record_cmd->currentData().toInt();
+    const int selectedResult = ui->combo_serial_record_result->currentData().toInt(); // -1全部, 1成功, 0失败
+
+    serial_record_vec_.clear();
+
+    int32_t ret = zl::TestRecordManager::getInstance()->GetAllRecord(
+        serial_record_vec_,
+        begdt,
+        enddt,
+        test_type,
+        zl::EResultType_Unknow,
+        zl::ESimNetStatus_Unknow,
+        "",
+        "",
+        "",
+        "",
+        "");
+
+    if (ret != zl::EResult_Success)
+    {
+        MsgWnd::ShowNormalInfo(QObject::tr("Query Serial Record Failed"));
+        return;
+    }
+
+    if (selectedCmd >= 0 || selectedResult >= 0) {
+        zl::RecordVec filtered;
+        const QString cmdKey = selectedCmd >= 0
+            ? QString("0x%1").arg(selectedCmd, 2, 16, QChar('0')).toUpper()
+            : QString();
+        for (const zl::RecordInfo &record : serial_record_vec_) {
+            if (selectedCmd >= 0) {
+                const QString cmdInfo = record.cmd_ret_info.trimmed().toUpper();
+                if (!(cmdInfo == cmdKey || cmdInfo.startsWith(cmdKey + " ") || cmdInfo.startsWith(cmdKey + "\t")))
+                    continue;
+            }
+            if (selectedResult == 1) {
+                if (record.result_type != zl::EResultType_Success)
+                    continue;
+            } else if (selectedResult == 0) {
+                if (record.result_type == zl::EResultType_Success)
+                    continue;
+            }
+            filtered.push_back(record);
+        }
+        serial_record_vec_ = filtered;
+    }
+
+    const bool isCn = (APPMODEL()->CabinetLanguage() == zl::ELanguageType_Cn);
+
+    auto funcAddItem = [&](const zl::RecordInfo& record)
+    {
+        QList<QStandardItem*> row;
+
+        QStandardItem* item_checkbox = new QStandardItem();
+        item_checkbox->setCheckable(true);
+        item_checkbox->setCheckState(Qt::Unchecked);
+        item_checkbox->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+        item_checkbox->setEditable(false);
+        row.append(item_checkbox);
+
+        QStandardItem* item_seq = new QStandardItem(record.record_id);
+        item_seq->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+        item_seq->setEditable(false);
+        row.append(item_seq);
+
+        QStandardItem* item_cmd = new QStandardItem(record.cmd_ret_info.isEmpty() ? "-" : record.cmd_ret_info);
+        item_cmd->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+        item_cmd->setEditable(false);
+        row.append(item_cmd);
+
+        const bool ok = (record.result_type == zl::EResultType_Success);
+        QString resultText = ok
+            ? (isCn ? QStringLiteral("成功") : QStringLiteral("Success"))
+            : (isCn ? QStringLiteral("测试失败") : QStringLiteral("Failed"));
+        // 兼容旧记录：result_info 可能是 OK / Success / 测试失败
+        if (ok && (record.result_info == QStringLiteral("OK")
+                   || record.result_info.contains(QStringLiteral("(OK)"))))
+            resultText = isCn ? QStringLiteral("成功") : QStringLiteral("Success");
+
+        QStandardItem* item_result = new QStandardItem(resultText);
+        item_result->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+        item_result->setEditable(false);
+        if (!ok)
+            item_result->setForeground(Qt::red);
+        row.append(item_result);
+
+        QStandardItem* item_time = new QStandardItem(record.test_time);
+        item_time->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+        row.append(item_time);
+
+        QStandardItem* item_op = new QStandardItem(isCn ? QStringLiteral("查看报告") : tr("View Report"));
+        item_op->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+        item_op->setBackground(QBrush(QColor(0, 95, 167)));
+        item_op->setForeground(Qt::white);
+        row.append(item_op);
+
+        model_serial_record_result_->appendRow(row);
+    };
+
+    TableHelper::readyUpdate(model_serial_record_result_, ui->tb_serial_record_result);
+
+    foreach(const zl::RecordInfo record, serial_record_vec_)
+    {
+        funcAddItem(record);
+    }
+
+    TableHelper::finishUpdate(model_serial_record_result_, ui->tb_serial_record_result);
+}
+
+void BackendWnd::on_btn_serial_record_export_excel_clicked()
+{
+    int rowCount = model_serial_record_result_ ? model_serial_record_result_->rowCount() : 0;
+    if (rowCount < 1)
+    {
+        MsgWnd::ShowNormalInfo(QObject::tr("Please query data first"));
+        return;
+    }
+
+    QList<int> selectedRows;
+    for (int i = 0; i < rowCount; ++i)
+    {
+        QStandardItem* cbItem = model_serial_record_result_->item(i, 0);
+        if (cbItem && cbItem->checkState() == Qt::Checked)
+        {
+            selectedRows.append(i);
+        }
+    }
+
+    if (selectedRows.isEmpty())
+    {
+        MsgWnd::ShowNormalInfo(QObject::tr("Please select records to export"));
+        return;
+    }
+
+    QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
+    QString defaultFileName = QString("serial_test_report_%1.csv").arg(timestamp);
+    QString fileName = QFileDialog::getSaveFileName(
+        this,
+        tr("Export Serial Port Test Report"),
+        QDir::homePath() + "/" + defaultFileName,
+        tr("CSV Files (*.csv);;All Files (*)")
+    );
+
+    if (fileName.isEmpty())
+    {
+        return;
+    }
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QMessageBox::warning(this, tr("Export Failed"), tr("Cannot create file: %1").arg(fileName));
+        return;
+    }
+
+    QTextStream out(&file);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    out.setEncoding(QStringConverter::Utf8);
+#else
+    out.setCodec("UTF-8");
+#endif
+
+    // UTF-8 BOM for Excel/WPS compatibility with Chinese text.
+    out << "\xEF\xBB\xBF";
+
+    auto csvEscape = [](const QString& text) -> QString {
+        QString escaped = text;
+        escaped.replace("\"", "\"\"");
+        return QString("\"%1\"").arg(escaped);
+    };
+
+    // Export exactly the highlighted header columns: Serial Number ~ Test Time.
+    QStringList headers;
+    for (int col = 1; col <= 4; ++col)
+    {
+        headers.append(csvEscape(model_serial_record_result_->headerData(col, Qt::Horizontal).toString()));
+    }
+    out << headers.join(",") << "\n";
+
+    for (int row : selectedRows)
+    {
+        QStringList rowData;
+        for (int col = 1; col <= 4; ++col)
+        {
+            rowData.append(csvEscape(model_serial_record_result_->index(row, col).data().toString()));
+        }
+        out << rowData.join(",") << "\n";
+    }
+
+    file.close();
+    QMessageBox::information(this, tr("Export Success"), tr("Report exported successfully to: %1").arg(fileName));
+}
+
+void BackendWnd::on_btn_serial_record_reset_clicked()
+{
+    ui->combo_serial_record_cmd->setCurrentIndex(0);
+    ui->combo_serial_record_result->setCurrentIndex(0);
+    init_serial_page_time_select();
+}
+
+void BackendWnd::on_btn_serial_record_delete_clicked()
+{
+    QStringList record_list;
+    int rowCount = model_serial_record_result_->rowCount();
+    for (int i = 0; i < rowCount; ++i) {
+        QStandardItem* cbItem = model_serial_record_result_->item(i, 0);
+        if (cbItem && cbItem->checkState() == Qt::Checked) {
+            QStandardItem* seqItem = model_serial_record_result_->item(i, 1);
+            if (seqItem) record_list << seqItem->text();
+        }
+    }
+
+    if (record_list.isEmpty()) return;
+
+    pending_delete_records_ = record_list;
+    pending_delete_type_ = "serial";
+    MsgWnd::ShowDeleteConfirm(this);
+}
+
+void BackendWnd::on_tb_serial_record_result_doubleClicked(const QModelIndex& index)
+{
+    if (!index.isValid()) {
+        return;
+    }
+
+    // 获取点击行的record_id（第1列，第0列是复选框）
+    QModelIndex recordIdIndex = model_serial_record_result_->index(index.row(), 1);
+    QString recordId = model_serial_record_result_->data(recordIdIndex).toString();
+
+    qDebug() << "[INFO] Double clicked Serial record, ID:" << recordId;
+
+    // 每次点击按 record_id 直查数据库，拿最新 TEST_LOG
+    QString testLog;
+    QSqlQuery query = zl::CDBConnector::Instance()->CreateQuery();
+    query.prepare("SELECT TEST_LOG FROM T_RECORD WHERE RECORD_ID=:record_id");
+    query.bindValue(":record_id", recordId);
+    int32_t ret = zl::CDBConnector::Instance()->ExecQuery(query);
+    if (ret == zl::CDBConnector::EDBError_Success && query.next()) {
+        testLog = query.value("TEST_LOG").toString();
+        qDebug() << "[INFO] Loaded latest test log from DB, length:" << testLog.length();
+    }
+
+    // 回退：数据库异常时仍尝试使用当前页面缓存
+    if (testLog.isEmpty()) {
+        foreach(const zl::RecordInfo& record, serial_record_vec_) {
+            if (record.record_id == recordId) {
+                testLog = record.test_log;
+                qDebug() << "[WARN] Fallback to cached test log, length:" << testLog.length();
+                break;
+            }
+        }
+    }
+
+    if (testLog.isEmpty()) {
+        qDebug() << "[WARN] No test log found for record:" << recordId;
+        QMessageBox::warning(this, tr("Warning"), tr("No test log found for this record"));
+        return;
+    }
+
+    showTestReportDialog(recordId, testLog);
+}
+
+void BackendWnd::on_serial_header_checkbox_clicked(bool checked)
+{
+    if (!model_serial_record_result_) return;
+    
+    int row_count = model_serial_record_result_->rowCount();
+    for (int i = 0; i < row_count; ++i) {
+        QStandardItem* item = model_serial_record_result_->item(i, 0);
         if (item && item->isCheckable()) {
             item->setCheckState(checked ? Qt::Checked : Qt::Unchecked);
         }

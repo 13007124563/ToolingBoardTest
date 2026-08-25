@@ -364,6 +364,42 @@
         <source>IOT Test</source>
         <translation type="unfinished"></translation>
     </message>
+        <message>
+        <source>Export Serial Port Test Report</source>
+        <translation>Export Serial Port Test Report</translation>
+    </message>
+        <message>
+        <source>Query Serial Record Failed</source>
+        <translation>Query Serial Record Failed</translation>
+    </message>
+        <message>
+        <source>Test Result</source>
+        <translation>Test Result</translation>
+    </message>
+        <message>
+        <source>Board Version</source>
+        <translation>Board Version</translation>
+    </message>
+        <message>
+        <source>Test Result:</source>
+        <translation>Test Result:</translation>
+    </message>
+        <message>
+        <source>Board Version:</source>
+        <translation>Board Version:</translation>
+    </message>
+        <message>
+        <source>Serial Port Test</source>
+        <translation>Serial Port Test</translation>
+    </message>
+        <message>
+        <source>Command</source>
+        <translation>Command</translation>
+    </message>
+        <message>
+        <source>Command:</source>
+        <translation>Command:</translation>
+    </message>
     <message>
         <location filename="client/src/BackendWnd.ui" line="948"/>
         <source>Sim ICCID:</source>

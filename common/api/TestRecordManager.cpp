@@ -70,6 +70,7 @@ void zl::TestRecordManager::GetEmptyRecord(RecordInfo& record)
     record.sim_test = 0;
     record.iot_test = 0;
     record.simiot_test = 0;
+    record.serial_test = 0;
     record.test_time = "";
     record.result_type = EResultType_Unknow;
     record.cmd_ret_info = "";
@@ -91,10 +92,10 @@ int32_t zl::TestRecordManager::SaveTestRecord(RecordInfo& record)
     qDebug() << "[INFO]" << "save record: " << record.record_id;
 
     QSqlQuery query = zl::CDBConnector::Instance()->CreateQuery();
-    query.prepare("INSERT INTO T_RECORD (RECORD_ID, SIM_CARD_TYPE, VER_TEST, SIM_TEST, IOT_TEST, SIMIOT_TEST, TEST_TIME, \
+    query.prepare("INSERT INTO T_RECORD (RECORD_ID, SIM_CARD_TYPE, VER_TEST, SIM_TEST, IOT_TEST, SIMIOT_TEST, SERIAL_TEST, TEST_TIME, \
                     RESULT_TYPE, CMD_RET_INFO, RESULT_INFO, TEST_LOG, \
                     MODULE_TYPE, IOT_MODULE_ID, IOT_IMEI, ICCID, NET_STATUS, NETWORK_TYPE, SIGNAL_STRENGTH, VERSION) \
-        VALUES(:record_id, :sim_card_type, :ver_test, :sim_test, :iot_test, :simiot_test, :test_time, \
+        VALUES(:record_id, :sim_card_type, :ver_test, :sim_test, :iot_test, :simiot_test, :serial_test, :test_time, \
                     :result_type, :cmd_ret_info, :result_info, :test_log, \
                     :module_type, :iot_module_id, :iot_imei, :iccid, :net_status, :network_type, :signal_strength, :version)");
 
@@ -104,6 +105,7 @@ int32_t zl::TestRecordManager::SaveTestRecord(RecordInfo& record)
     query.bindValue(":sim_test", record.sim_test);
     query.bindValue(":iot_test", record.iot_test);
     query.bindValue(":simiot_test", record.simiot_test);
+    query.bindValue(":serial_test", record.serial_test);
     query.bindValue(":test_time", CURRENT_DATESTR);
 
     query.bindValue(":result_type", record.result_type);
@@ -289,6 +291,11 @@ int32_t zl::TestRecordManager::GetAllRecord(RecordVec& vec,
             str += " AND VER_TEST=1";
         }
             break;
+        case ETestType_Serial:
+        {
+            str += " AND SERIAL_TEST=1";
+        }
+            break;
         default:
             break;
         }
@@ -346,6 +353,7 @@ int32_t zl::TestRecordManager::GetAllRecord(RecordVec& vec,
         record.sim_test = query.value("SIM_TEST").toInt();
         record.iot_test = query.value("IOT_TEST").toInt();
         record.simiot_test = query.value("SIMIOT_TEST").toInt();
+        record.serial_test = query.value("SERIAL_TEST").toInt();
         record.test_time = query.value("TEST_TIME").toString();
         record.result_type = EResultType(query.value("RESULT_TYPE").toInt());
         record.cmd_ret_info = query.value("CMD_RET_INFO").toString();
@@ -387,6 +395,7 @@ int32_t zl::TestRecordManager::GetComboCompleterInfo(QStringList& module_id_list
             case zl::ETestType_Iot:         return tr("IOT_TEST");
             case zl::ETestType_SimIot:      return tr("SIMIOT_TEST");
             case zl::ETestType_RomVer:      return tr("VER_TEST");
+            case zl::ETestType_Serial:      return tr("SERIAL_TEST");
 
             default: return "";
             }

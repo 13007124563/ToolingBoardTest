@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QLabel>
 #include <QLineEdit>
+#include <QDateTime>
 
 // 包含CSerialCommandWrapper以获取类型定义（Windows和Linux都需要）
 #include "CSerialCommandWrapper.h"
@@ -55,6 +56,8 @@ protected:
     QLineEdit* boardTestResultEdit(quint8 cmd) const;
     void clearBoardTestResultField(quint8 cmd);
     void updateBoardTestResultUi(const Protocol::Frame &frame);
+    void saveSerialTestRecord(quint8 cmd, const QString &summary, const QString &detailLog,
+                              zl::EResultType resultType = zl::EResultType_Success);
 
     void resetSimInfo();
 
@@ -171,6 +174,8 @@ private:
     SerialManager m_serial;             // 主界面串口（QSerialPort，独立于 CSerialCommandWrapper）
     Protocol::ProtocolCodec m_codec;    // RS485 帧编解码（测试板协议）
     quint8 m_lastBoardQueryCmd = 0;     // 最近一次发送的治具查询命令
+    QString m_lastBoardTxHex;           // 最近一次发送的治具报文（hex）
+    QDateTime m_lastBoardTxTime;        // 最近一次发送治具报文时间
 
     // 跟踪当前执行中的按钮
     QPushButton* m_currentExecutingButton;

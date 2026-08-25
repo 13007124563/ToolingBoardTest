@@ -20,10 +20,6 @@
         <translation type="vanished">固件版本:</translation>
     </message>
     <message>
-        <source>Command:</source>
-        <translation type="vanished">测试指令:</translation>
-    </message>
-    <message>
         <source>Return State:</source>
         <translation type="vanished">指令返回:</translation>
     </message>
@@ -102,6 +98,42 @@
     <message>
         <source>IOT Test</source>
         <translation>IOT测试</translation>
+    </message>
+        <message>
+        <source>Export Serial Port Test Report</source>
+        <translation>导出串口测试报告</translation>
+    </message>
+        <message>
+        <source>Query Serial Record Failed</source>
+        <translation>查询串口测试记录失败</translation>
+    </message>
+        <message>
+        <source>Test Result</source>
+        <translation>测试结果</translation>
+    </message>
+        <message>
+        <source>Board Version</source>
+        <translation>治具版本</translation>
+    </message>
+        <message>
+        <source>Test Result:</source>
+        <translation>测试结果:</translation>
+    </message>
+        <message>
+        <source>Board Version:</source>
+        <translation>治具版本:</translation>
+    </message>
+        <message>
+        <source>Serial Port Test</source>
+        <translation>串口测试</translation>
+    </message>
+    <message>
+        <source>Command:</source>
+        <translation>命令字:</translation>
+    </message>
+        <message>
+        <source>Command</source>
+        <translation>命令字</translation>
     </message>
     <message>
         <source>S&amp;I Test</source>
@@ -1596,6 +1628,14 @@ Test timeout (6 minutes), script terminated.</source>
     <message>
         <source>VER_TEST</source>
         <translation>版本测试</translation>
+    </message>
+    <message>
+        <source>Success</source>
+        <translation>成功</translation>
+    </message>
+    <message>
+        <source>Failure</source>
+        <translation>失败</translation>
     </message>
 </context>
 </TS>

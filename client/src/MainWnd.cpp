@@ -362,6 +362,55 @@ void MainWnd::updateBoardTestResultUi(const Protocol::Frame &frame)
     edit->setStyleSheet("");
 }
 
+void MainWnd::saveSerialTestRecord(quint8 cmd, const QString &summary, const QString &detailLog,
+                                   zl::EResultType resultType)
+{
+    zl::RecordInfo record;
+    TestRecordManager::getInstance()->GetEmptyRecord(record);
+
+    static const char *kCmdLabels[][2] = {
+        { "0x01", "0x01 Query Board Version" },
+        { "0x02", "0x02 VCC 12/5/3.3 (CN52)" },
+        { "0x03", "0x03 Printer Power (CN43)" },
+        { "0x04", "0x04 5V Ctl Output (CN39)" },
+        { "0x05", "0x05 12V Ctl Output (CN47)" },
+        { "0x06", "0x06 5V Proximity (CN13)" },
+        { "0x07", "0x07 ST_INPUT1/2 IO Test" },
+    };
+    const bool isCn = (APPMODEL()->CabinetLanguage() == zl::ELanguageType_Cn);
+    const QString cmdHex = QString("0x%1").arg(cmd, 2, 16, QChar('0')).toUpper();
+    QString cmdLabel = cmdHex;
+    for (const auto &item : kCmdLabels) {
+        if (QString::fromLatin1(item[0]).compare(cmdHex, Qt::CaseInsensitive) == 0) {
+            cmdLabel = QString::fromLatin1(item[1]);
+            break;
+        }
+    }
+
+    record.test_type = zl::ETestType_Serial;
+    record.serial_test = 1;
+    record.sim_test = 0;
+    record.iot_test = 0;
+    record.simiot_test = 0;
+    record.result_type = resultType;
+    record.result_info = (resultType == zl::EResultType_Success)
+        ? (isCn ? QStringLiteral("成功") : QStringLiteral("Success"))
+        : summary;
+    if (resultType != zl::EResultType_Success && summary.trimmed().isEmpty())
+        record.result_info = isCn ? QStringLiteral("测试失败") : QStringLiteral("Failed");
+    record.cmd_ret_info = cmdLabel;
+    record.test_log = detailLog;
+    record.version = ui->lb_test_board_version->text().trimmed();
+
+    const int32_t ret = TestRecordManager::getInstance()->SaveTestRecord(record);
+    if (ret != zl::EResult_Success) {
+        qDebug() << "[ERROR] Failed to save serial test record, cmd:" << cmd;
+        return;
+    }
+    qDebug() << "[INFO] Serial test record saved, id:" << record.record_id
+             << "cmd:" << cmd << "result:" << int(resultType);
+}
+
 void MainWnd::resetSimInfo()
 {
     ui->lb_test_sim_network->clear();
@@ -1014,7 +1063,7 @@ void MainWnd::initBoardCommandCombo()
         { Protocol::CmdStInputIoTest,     "0x07 ST_INPUT1/2 IO Test" },
     };
     for (const CmdItem &item : items)
-        ui->cb_board_cmd->addItem(tr(item.label), item.cmd);
+        ui->cb_board_cmd->addItem(QString::fromLatin1(item.label), item.cmd);
 }
 
 void MainWnd::refreshSerialPorts()
@@ -1133,6 +1182,8 @@ void MainWnd::sendSelectedBoardQuery()
 
     const quint8 cmd = static_cast<quint8>(cmdVar.toUInt());
     m_lastBoardQueryCmd = cmd;
+    m_lastBoardTxHex.clear();
+    m_lastBoardTxTime = QDateTime();
 
     clearBoardTestResultField(cmd);
 
@@ -1184,8 +1235,10 @@ void MainWnd::onSerialError(const QString &message)
 
 void MainWnd::onSerialFrameSent(const QByteArray &frame)
 {
+    m_lastBoardTxHex = Protocol::ProtocolCodec::frameToHex(frame);
+    m_lastBoardTxTime = QDateTime::currentDateTime();
     ui->lb_test_cmd_excute_return_msg->appendPlainText(
-        tr("[TX] %1").arg(Protocol::ProtocolCodec::frameToHex(frame)));
+        tr("[TX] %1").arg(m_lastBoardTxHex));
 }
 
 void MainWnd::onSerialFrameReceived(const Protocol::Frame &frame, const QString &parsedText)
@@ -1198,6 +1251,47 @@ void MainWnd::onSerialFrameReceived(const Protocol::Frame &frame, const QString 
     ui->lb_test_cmd_excute_return_msg->appendPlainText(parsedText);
 
     updateBoardTestResultUi(frame);
+
+    if (!boardTestResultEdit(frame.cmd))
+        return;
+
+    const QString txTime = m_lastBoardTxTime.isValid()
+        ? m_lastBoardTxTime.toString(QStringLiteral("yyyy-MM-dd HH:mm:ss.zzz"))
+        : QStringLiteral("-");
+    const QString rxTime = QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss.zzz"));
+    const QString txContent = m_lastBoardTxHex.isEmpty() ? QStringLiteral("-") : m_lastBoardTxHex;
+    const QString rxContent = Protocol::ProtocolCodec::frameToHex(frame.raw);
+
+    if (frame.resp == Protocol::kRespUpOk) {
+        const QString summary = Protocol::ResponseParser::summaryText(frame);
+        if (summary.isEmpty())
+            return;
+        const QString parsedContent = parsedText.trimmed().isEmpty() ? summary : parsedText.trimmed();
+        const QString detailLog = tr("发送报文时间：%1\n"
+                                     "发送报文内容：%2\n"
+                                     "接收报文时间：%3\n"
+                                     "接收报文内容：%4\n"
+                                     "接收到的解析内容：%5")
+                                      .arg(txTime, txContent, rxTime, rxContent, parsedContent);
+        saveSerialTestRecord(frame.cmd, summary, detailLog, zl::EResultType_Success);
+        return;
+    }
+
+    // 回包失败：界面标红并写入失败记录
+    if (QLineEdit *edit = boardTestResultEdit(frame.cmd))
+        setLabelFailed(edit);
+
+    const QString failReason = parsedText.trimmed().isEmpty()
+        ? tr("Response error, resp=0x%1").arg(frame.resp, 2, 16, QChar('0'))
+        : parsedText.trimmed();
+    const QString detailLog = tr("发送报文时间：%1\n"
+                                 "发送报文内容：%2\n"
+                                 "接收报文时间：%3\n"
+                                 "接收报文内容：%4\n"
+                                 "接收到的解析内容：-\n"
+                                 "失败原因：%5")
+                                  .arg(txTime, txContent, rxTime, rxContent, failReason);
+    saveSerialTestRecord(frame.cmd, tr("测试失败"), detailLog, zl::EResultType_State_error);
 }
 
 void MainWnd::onSerialPassiveFrameReceived(const Protocol::Frame &frame, const QString &reason)
@@ -1213,12 +1307,29 @@ void MainWnd::onSerialPassiveFrameReceived(const Protocol::Frame &frame, const Q
 
 void MainWnd::onSerialOperationTimeout()
 {
-    ui->lb_test_cmd_excute_return_msg->appendPlainText(
-        tr("[TIMEOUT] No matching response within %1 ms").arg(m_serial.timeoutMs()));
+    const QString failReason = tr("No matching response within %1 ms").arg(m_serial.timeoutMs());
+    ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("[TIMEOUT] %1").arg(failReason));
+
     if (QLineEdit *edit = boardTestResultEdit(m_lastBoardQueryCmd)) {
         if (edit->text().isEmpty())
             setLabelFailed(edit);
     }
+
+    if (!boardTestResultEdit(m_lastBoardQueryCmd))
+        return;
+
+    const QString txTime = m_lastBoardTxTime.isValid()
+        ? m_lastBoardTxTime.toString(QStringLiteral("yyyy-MM-dd HH:mm:ss.zzz"))
+        : QStringLiteral("-");
+    const QString txContent = m_lastBoardTxHex.isEmpty() ? QStringLiteral("-") : m_lastBoardTxHex;
+    const QString detailLog = tr("发送报文时间：%1\n"
+                                 "发送报文内容：%2\n"
+                                 "接收报文时间：-\n"
+                                 "接收报文内容：-\n"
+                                 "接收到的解析内容：-\n"
+                                 "失败原因：%3")
+                                  .arg(txTime, txContent, failReason);
+    saveSerialTestRecord(m_lastBoardQueryCmd, tr("测试失败"), detailLog, zl::EResultType_State_error);
 }
 
 void MainWnd::auto_save_record()
