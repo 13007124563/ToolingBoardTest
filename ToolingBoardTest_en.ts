@@ -980,8 +980,8 @@
     </message>
     <message>
         <location filename="client/src/MainWnd.ui" line="253"/>
-        <source>One-key Test</source>
-        <translation>One-key Test</translation>
+        <source>IOT Test</source>
+        <translation>IOT Test</translation>
     </message>
     <message>
         <location filename="client/src/MainWnd.ui" line="254"/>

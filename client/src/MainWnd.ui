@@ -75,7 +75,7 @@ QPushButton[objectName=&quot;btn_nor_version&quot;]:pressed
 	background-color: #E67E00;
 }
 
-/* 蓝色按钮 - 一键测试 */
+/* 蓝色按钮 - IOT测试 */
 QPushButton[objectName=&quot;btn_nor_all_test&quot;]
 {
 	background-color: #005FA7;
@@ -379,7 +379,7 @@ QComboBox::down-arrow {
          </item>
          
          <item><widget class="QPushButton" name="btn_nor_version"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Image Version</string></property></widget></item>
-         <item><widget class="QPushButton" name="btn_nor_all_test"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>One-key Test</string></property></widget></item>
+         <item><widget class="QPushButton" name="btn_nor_all_test"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>IOT Test</string></property></widget></item>
          <item><widget class="QPushButton" name="btn_nor_record"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Test Record</string></property></widget></item>
          
          <item><widget class="QPushButton" name="btn_nor_open_port"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Open Serial Port</string></property></widget></item>
