@@ -347,16 +347,26 @@ void MainWnd::clearBoardTestResultField(quint8 cmd)
 
 void MainWnd::updateBoardTestResultUi(const Protocol::Frame &frame)
 {
-    if (frame.resp != Protocol::kRespUpOk)
+    if (frame.resp != Protocol::kRespUpOk) {
+        qDebug() << "[WARN] updateBoardTestResultUi skip: resp not ok, cmd=0x"
+                 << QString::number(frame.cmd, 16).toUpper()
+                 << "resp=0x" << QString::number(frame.resp, 16).toUpper();
         return;
+    }
 
     QLineEdit *edit = boardTestResultEdit(frame.cmd);
-    if (!edit)
+    if (!edit) {
+        qDebug() << "[WARN] updateBoardTestResultUi skip: no result edit for cmd=0x"
+                 << QString::number(frame.cmd, 16).toUpper();
         return;
+    }
 
     const QString summary = Protocol::ResponseParser::summaryText(frame);
-    if (summary.isEmpty())
+    if (summary.isEmpty()) {
+        qDebug() << "[WARN] updateBoardTestResultUi skip: empty summary, cmd=0x"
+                 << QString::number(frame.cmd, 16).toUpper();
         return;
+    }
 
     edit->setText(summary);
     edit->setStyleSheet("");
@@ -1252,8 +1262,11 @@ void MainWnd::onSerialFrameReceived(const Protocol::Frame &frame, const QString 
 
     updateBoardTestResultUi(frame);
 
-    if (!boardTestResultEdit(frame.cmd))
+    if (!boardTestResultEdit(frame.cmd)) {
+        qDebug() << "[WARN] onSerialFrameReceived skip save: no result edit for cmd=0x"
+                 << QString::number(frame.cmd, 16).toUpper();
         return;
+    }
 
     const QString txTime = m_lastBoardTxTime.isValid()
         ? m_lastBoardTxTime.toString(QStringLiteral("yyyy-MM-dd HH:mm:ss.zzz"))
@@ -1264,8 +1277,11 @@ void MainWnd::onSerialFrameReceived(const Protocol::Frame &frame, const QString 
 
     if (frame.resp == Protocol::kRespUpOk) {
         const QString summary = Protocol::ResponseParser::summaryText(frame);
-        if (summary.isEmpty())
+        if (summary.isEmpty()) {
+            qDebug() << "[WARN] onSerialFrameReceived skip save: empty summary, cmd=0x"
+                     << QString::number(frame.cmd, 16).toUpper();
             return;
+        }
         const QString parsedContent = parsedText.trimmed().isEmpty() ? summary : parsedText.trimmed();
         const QString detailLog = tr("发送报文时间：%1\n"
                                      "发送报文内容：%2\n"
@@ -1315,8 +1331,11 @@ void MainWnd::onSerialOperationTimeout()
             setLabelFailed(edit);
     }
 
-    if (!boardTestResultEdit(m_lastBoardQueryCmd))
+    if (!boardTestResultEdit(m_lastBoardQueryCmd)) {
+        qDebug() << "[WARN] onSerialOperationTimeout skip save: no result edit for cmd=0x"
+                 << QString::number(m_lastBoardQueryCmd, 16).toUpper();
         return;
+    }
 
     const QString txTime = m_lastBoardTxTime.isValid()
         ? m_lastBoardTxTime.toString(QStringLiteral("yyyy-MM-dd HH:mm:ss.zzz"))
