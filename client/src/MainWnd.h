@@ -47,7 +47,11 @@ protected:
 
     void resetVersionInfo();
 
-    void resetBoardVersionInfo();
+    void resetBoardTestResults();
+
+    QLineEdit* boardTestResultEdit(quint8 cmd) const;
+    void clearBoardTestResultField(quint8 cmd);
+    void updateBoardTestResultUi(const Protocol::Frame &frame);
 
     void resetSimInfo();
 

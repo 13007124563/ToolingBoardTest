@@ -20,6 +20,7 @@
 #include "protocol/protocolframe.h"
 #include "protocol/protocolconstants.h"
 #include "protocol/responseparser.h"
+#include "protocol/protocolconstants.h"
 
 #include <QProcess>
 #include <QFile>
@@ -288,10 +289,58 @@ void MainWnd::resetVersionInfo()
     ui->lb_test_version->setStyleSheet("");
 }
 
-void MainWnd::resetBoardVersionInfo()
+void MainWnd::resetBoardTestResults()
 {
-    ui->lb_test_board_version->clear();
-    ui->lb_test_board_version->setStyleSheet("");
+    static const quint8 kBoardTestCmds[] = {
+        Protocol::CmdQueryVersion,
+        Protocol::CmdVccCn52Test,
+        Protocol::CmdPrinterCn43Test,
+        Protocol::CmdVout5vCn39Test,
+        Protocol::CmdVout12vCn47Test,
+        Protocol::CmdProximityCn13Test,
+        Protocol::CmdStInputIoTest,
+    };
+    for (quint8 cmd : kBoardTestCmds)
+        clearBoardTestResultField(cmd);
+}
+
+QLineEdit* MainWnd::boardTestResultEdit(quint8 cmd) const
+{
+    switch (cmd) {
+    case Protocol::CmdQueryVersion:      return ui->lb_test_board_version;
+    case Protocol::CmdVccCn52Test:       return ui->lb_test_board_vcc_cn52;
+    case Protocol::CmdPrinterCn43Test:   return ui->lb_test_board_printer_cn43;
+    case Protocol::CmdVout5vCn39Test:    return ui->lb_test_board_vout5v_cn39;
+    case Protocol::CmdVout12vCn47Test:   return ui->lb_test_board_vout12v_cn47;
+    case Protocol::CmdProximityCn13Test: return ui->lb_test_board_proximity_cn13;
+    case Protocol::CmdStInputIoTest:     return ui->lb_test_board_st_input;
+    default:                             return nullptr;
+    }
+}
+
+void MainWnd::clearBoardTestResultField(quint8 cmd)
+{
+    if (QLineEdit *edit = boardTestResultEdit(cmd)) {
+        edit->clear();
+        edit->setStyleSheet("");
+    }
+}
+
+void MainWnd::updateBoardTestResultUi(const Protocol::Frame &frame)
+{
+    if (frame.resp != Protocol::kRespUpOk)
+        return;
+
+    QLineEdit *edit = boardTestResultEdit(frame.cmd);
+    if (!edit)
+        return;
+
+    const QString summary = Protocol::ResponseParser::summaryText(frame);
+    if (summary.isEmpty())
+        return;
+
+    edit->setText(summary);
+    edit->setStyleSheet("");
 }
 
 void MainWnd::resetSimInfo()
@@ -1066,12 +1115,14 @@ void MainWnd::sendSelectedBoardQuery()
     const quint8 cmd = static_cast<quint8>(cmdVar.toUInt());
     m_lastBoardQueryCmd = cmd;
 
-    if (cmd == Protocol::CmdQueryVersion) {
-        ui->lb_test_board_version->clear();
-        ui->lb_test_board_version->setStyleSheet("");
-    }
+    clearBoardTestResultField(cmd);
 
-    sendBuiltFrame(cmd);
+    QByteArray info;
+    // 3.7 ST_INPUT IO：下行 INFO 为输出电平（00 低 / 01 高），默认低电平与协议文档示例一致
+    if (cmd == Protocol::CmdStInputIoTest)
+        info.append(static_cast<char>(0x00));
+
+    sendBuiltFrame(cmd, info);
 }
 
 void MainWnd::on_btn_nor_open_port_clicked()
@@ -1127,13 +1178,7 @@ void MainWnd::onSerialFrameReceived(const Protocol::Frame &frame, const QString 
             .arg(Protocol::ProtocolCodec::frameToHex(frame.raw)));
     ui->lb_test_cmd_excute_return_msg->appendPlainText(parsedText);
 
-    if (frame.cmd == Protocol::CmdQueryVersion && frame.resp == Protocol::kRespUpOk) {
-        const QString ver = Protocol::ResponseParser::versionText(frame);
-        if (!ver.isEmpty()) {
-            ui->lb_test_board_version->setText(ver);
-            ui->lb_test_board_version->setStyleSheet("");
-        }
-    }
+    updateBoardTestResultUi(frame);
 }
 
 void MainWnd::onSerialPassiveFrameReceived(const Protocol::Frame &frame, const QString &reason)
@@ -1151,9 +1196,10 @@ void MainWnd::onSerialOperationTimeout()
 {
     ui->lb_test_cmd_excute_return_msg->appendPlainText(
         tr("[TIMEOUT] No matching response within %1 ms").arg(m_serial.timeoutMs()));
-    if (m_lastBoardQueryCmd == Protocol::CmdQueryVersion
-        && ui->lb_test_board_version->text().isEmpty())
-        setLabelFailed(ui->lb_test_board_version);
+    if (QLineEdit *edit = boardTestResultEdit(m_lastBoardQueryCmd)) {
+        if (edit->text().isEmpty())
+            setLabelFailed(edit);
+    }
 }
 
 void MainWnd::auto_save_record()
@@ -2356,7 +2402,7 @@ void MainWnd::doClearTestResult()
     // ui->cb_module_type->setCurrentIndex(0);  // 保留模块类型选择
 
     resetVersionInfo();
-    resetBoardVersionInfo();
+    resetBoardTestResults();
     resetSimInfo();
     resetIotInfo();
     resetCmdResultInfo();

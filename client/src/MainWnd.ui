@@ -429,14 +429,14 @@ QComboBox::down-arrow {
               <x>0</x>
               <y>0</y>
               <width>880</width>
-              <height>600</height>
-             </rect>
-            </property>
+             <height>860</height>
+            </rect>
+           </property>
             <!-- 临时：内容最小高度大于可视区域，便于验证滚动 -->
             <property name="minimumSize">
              <size>
               <width>0</width>
-              <height>600</height>
+              <height>860</height>
              </size>
             </property>
             <layout class="QGridLayout" name="gridLayout_Info">
@@ -547,6 +547,84 @@ QComboBox::down-arrow {
              </item>
              <item row="7" column="1">
               <widget class="QLineEdit" name="lb_test_board_version">
+               <property name="readOnly"><bool>true</bool></property>
+               <property name="minimumSize"><size><width>0</width><height>35</height></size></property>
+              </widget>
+             </item>
+             <item row="8" column="0">
+              <widget class="QLabel" name="lb_board_vcc_cn52_info">
+               <property name="text"><string>VCC 12/5/3.3V (CN52):</string></property>
+               <property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property>
+               <property name="minimumSize"><size><width>140</width><height>0</height></size></property>
+              </widget>
+             </item>
+             <item row="8" column="1">
+              <widget class="QLineEdit" name="lb_test_board_vcc_cn52">
+               <property name="readOnly"><bool>true</bool></property>
+               <property name="minimumSize"><size><width>0</width><height>35</height></size></property>
+              </widget>
+             </item>
+             <item row="9" column="0">
+              <widget class="QLabel" name="lb_board_printer_cn43_info">
+               <property name="text"><string>Printer Power (CN43):</string></property>
+               <property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property>
+               <property name="minimumSize"><size><width>140</width><height>0</height></size></property>
+              </widget>
+             </item>
+             <item row="9" column="1">
+              <widget class="QLineEdit" name="lb_test_board_printer_cn43">
+               <property name="readOnly"><bool>true</bool></property>
+               <property name="minimumSize"><size><width>0</width><height>35</height></size></property>
+              </widget>
+             </item>
+             <item row="10" column="0">
+              <widget class="QLabel" name="lb_board_vout5v_cn39_info">
+               <property name="text"><string>5V Output (CN39):</string></property>
+               <property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property>
+               <property name="minimumSize"><size><width>140</width><height>0</height></size></property>
+              </widget>
+             </item>
+             <item row="10" column="1">
+              <widget class="QLineEdit" name="lb_test_board_vout5v_cn39">
+               <property name="readOnly"><bool>true</bool></property>
+               <property name="minimumSize"><size><width>0</width><height>35</height></size></property>
+              </widget>
+             </item>
+             <item row="11" column="0">
+              <widget class="QLabel" name="lb_board_vout12v_cn47_info">
+               <property name="text"><string>12V Output (CN47):</string></property>
+               <property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property>
+               <property name="minimumSize"><size><width>140</width><height>0</height></size></property>
+              </widget>
+             </item>
+             <item row="11" column="1">
+              <widget class="QLineEdit" name="lb_test_board_vout12v_cn47">
+               <property name="readOnly"><bool>true</bool></property>
+               <property name="minimumSize"><size><width>0</width><height>35</height></size></property>
+              </widget>
+             </item>
+             <item row="12" column="0">
+              <widget class="QLabel" name="lb_board_proximity_cn13_info">
+               <property name="text"><string>5V Proximity (CN13):</string></property>
+               <property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property>
+               <property name="minimumSize"><size><width>140</width><height>0</height></size></property>
+              </widget>
+             </item>
+             <item row="12" column="1">
+              <widget class="QLineEdit" name="lb_test_board_proximity_cn13">
+               <property name="readOnly"><bool>true</bool></property>
+               <property name="minimumSize"><size><width>0</width><height>35</height></size></property>
+              </widget>
+             </item>
+             <item row="13" column="0">
+              <widget class="QLabel" name="lb_board_st_input_info">
+               <property name="text"><string>ST_INPUT IO (CN45/13):</string></property>
+               <property name="alignment"><set>Qt::AlignRight|Qt::AlignVCenter</set></property>
+               <property name="minimumSize"><size><width>140</width><height>0</height></size></property>
+              </widget>
+             </item>
+             <item row="13" column="1">
+              <widget class="QLineEdit" name="lb_test_board_st_input">
                <property name="readOnly"><bool>true</bool></property>
                <property name="minimumSize"><size><width>0</width><height>35</height></size></property>
               </widget>
