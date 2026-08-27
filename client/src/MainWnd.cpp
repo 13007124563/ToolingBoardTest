@@ -627,7 +627,7 @@ void MainWnd::showSimInfo(QByteArray& data)
         network_type = tr("CAT-M1");
         break;
     case (char)0xFF:
-        network_type = tr("无服务");
+        network_type = tr("No service");
         break;
     default:
         network_type = tr("Unknown");
@@ -1390,11 +1390,11 @@ QString MainWnd::makeSerialExchangeDetailLog(const QString &stepLabel, const QSt
     const QString rxHex = rxContent.isEmpty() ? QStringLiteral("-") : rxContent;
 
     return tr("[%1]\n"
-              "发送报文时间：%2\n"
-              "发送报文内容：%3\n"
-              "接收报文时间：%4\n"
-              "接收报文内容：%5\n"
-              "接收到的解析内容：%6")
+              "TX time: %2\n"
+              "TX content: %3\n"
+              "RX time: %4\n"
+              "RX content: %5\n"
+              "Parsed content: %6")
         .arg(stepLabel,
              txTime,
              txContent,
@@ -1441,11 +1441,11 @@ void MainWnd::failDualVoltageTest(const QString &reason)
 
     if (!m_dualVoltageTestDetailLog.isEmpty())
         m_dualVoltageTestDetailLog += QStringLiteral("\n\n");
-    m_dualVoltageTestDetailLog += tr("失败原因：%1").arg(reason);
+    m_dualVoltageTestDetailLog += tr("Failure reason: %1").arg(reason);
 
     restoreDualVoltageRelayToLow();
 
-    const QString summary = tr("测试失败");
+    const QString summary = tr("Test failed");
     saveSerialTestRecord(m_dualVoltageBoardCmd, summary, m_dualVoltageTestDetailLog,
                          zl::EResultType_State_error);
 
@@ -1524,7 +1524,7 @@ void MainWnd::finalizeDualVoltageTest()
             m_dualVoltageTestDetailLog += QStringLiteral(" | ");
         if (!m_dualVoltageHighReadingValid || !m_dualVoltageHighOk)
             m_dualVoltageTestDetailLog += tr("High voltage test failed");
-        saveSerialTestRecord(m_dualVoltageBoardCmd, tr("测试失败"), m_dualVoltageTestDetailLog,
+        saveSerialTestRecord(m_dualVoltageBoardCmd, tr("Test failed"), m_dualVoltageTestDetailLog,
                              zl::EResultType_State_error);
     }
 
@@ -1795,9 +1795,9 @@ void MainWnd::failSingleVoltageTest(const QString &reason)
 
     if (!m_singleVoltageTestDetailLog.isEmpty())
         m_singleVoltageTestDetailLog += QStringLiteral("\n\n");
-    m_singleVoltageTestDetailLog += tr("失败原因：%1").arg(reason);
+    m_singleVoltageTestDetailLog += tr("Failure reason: %1").arg(reason);
 
-    const QString summary = tr("测试失败");
+    const QString summary = tr("Test failed");
     saveSerialTestRecord(m_singleVoltageBoardCmd, summary, m_singleVoltageTestDetailLog,
                          zl::EResultType_State_error);
 
@@ -1851,7 +1851,7 @@ void MainWnd::finalizeSingleVoltageTest()
         if (!m_singleVoltageTestDetailLog.isEmpty())
             m_singleVoltageTestDetailLog += QStringLiteral("\n\n");
         m_singleVoltageTestDetailLog += tr("High voltage test failed");
-        saveSerialTestRecord(m_singleVoltageBoardCmd, tr("测试失败"), m_singleVoltageTestDetailLog,
+        saveSerialTestRecord(m_singleVoltageBoardCmd, tr("Test failed"), m_singleVoltageTestDetailLog,
                              zl::EResultType_State_error);
     }
 
@@ -2118,11 +2118,11 @@ void MainWnd::onSerialFrameReceived(const Protocol::Frame &frame, const QString 
             return;
         }
         const QString parsedContent = parsedText.trimmed().isEmpty() ? summary : parsedText.trimmed();
-        const QString detailLog = tr("发送报文时间：%1\n"
-                                     "发送报文内容：%2\n"
-                                     "接收报文时间：%3\n"
-                                     "接收报文内容：%4\n"
-                                     "接收到的解析内容：%5")
+        const QString detailLog = tr("TX time: %1\n"
+                                     "TX content: %2\n"
+                                     "RX time: %3\n"
+                                     "RX content: %4\n"
+                                     "Parsed content: %5")
                                       .arg(txTime, txContent, rxTime, rxContent, parsedContent);
         saveSerialTestRecord(frame.cmd, summary, detailLog, zl::EResultType_Success);
         if (m_oneClickTestAwaitingQuery) {
@@ -2139,14 +2139,14 @@ void MainWnd::onSerialFrameReceived(const Protocol::Frame &frame, const QString 
     const QString failReason = parsedText.trimmed().isEmpty()
         ? tr("Response error, resp=0x%1").arg(frame.resp, 2, 16, QChar('0'))
         : parsedText.trimmed();
-    const QString detailLog = tr("发送报文时间：%1\n"
-                                 "发送报文内容：%2\n"
-                                 "接收报文时间：%3\n"
-                                 "接收报文内容：%4\n"
-                                 "接收到的解析内容：-\n"
-                                 "失败原因：%5")
+    const QString detailLog = tr("TX time: %1\n"
+                                 "TX content: %2\n"
+                                 "RX time: %3\n"
+                                 "RX content: %4\n"
+                                 "Parsed content: -\n"
+                                 "Failure reason: %5")
                                   .arg(txTime, txContent, rxTime, rxContent, failReason);
-    saveSerialTestRecord(frame.cmd, tr("测试失败"), detailLog, zl::EResultType_State_error);
+    saveSerialTestRecord(frame.cmd, tr("Test failed"), detailLog, zl::EResultType_State_error);
     if (m_oneClickTestAwaitingQuery) {
         ++m_oneClickQueryIndex;
         proceedOneClickNextQueryOrFinish();
@@ -2215,14 +2215,14 @@ void MainWnd::onSerialOperationTimeout()
         ? m_lastBoardTxTime.toString(QStringLiteral("yyyy-MM-dd HH:mm:ss.zzz"))
         : QStringLiteral("-");
     const QString txContent = m_lastBoardTxHex.isEmpty() ? QStringLiteral("-") : m_lastBoardTxHex;
-    const QString detailLog = tr("发送报文时间：%1\n"
-                                 "发送报文内容：%2\n"
-                                 "接收报文时间：-\n"
-                                 "接收报文内容：-\n"
-                                 "接收到的解析内容：-\n"
-                                 "失败原因：%3")
+    const QString detailLog = tr("TX time: %1\n"
+                                 "TX content: %2\n"
+                                 "RX time: -\n"
+                                 "RX content: -\n"
+                                 "Parsed content: -\n"
+                                 "Failure reason: %3")
                                   .arg(txTime, txContent, failReason);
-    saveSerialTestRecord(m_lastBoardQueryCmd, tr("测试失败"), detailLog, zl::EResultType_State_error);
+    saveSerialTestRecord(m_lastBoardQueryCmd, tr("Test failed"), detailLog, zl::EResultType_State_error);
     if (m_oneClickTestAwaitingQuery) {
         ++m_oneClickQueryIndex;
         proceedOneClickNextQueryOrFinish();
@@ -2701,7 +2701,7 @@ void MainWnd::readScriptResults()
             record_.net_status = zl::ESimNetStatus_Fail;
             ui->lb_test_sim_network->setStyleSheet("color: red;");
         } else if (cregState == "3") {
-            networkStatus = tr("测试失败");
+            networkStatus = tr("Test failed");
             record_.net_status = zl::ESimNetStatus_Fail;
             ui->lb_test_sim_network->setStyleSheet("color: red;");
         } else {
@@ -3459,13 +3459,13 @@ void MainWnd::doClearTestResult()
 void MainWnd::setLabelFailed(QLabel* label)
 {
     if (!label) return;
-    label->setText(tr("测试失败"));
+    label->setText(tr("Test failed"));
     label->setStyleSheet("color: red;");
 }
 
 void MainWnd::setLabelFailed(QLineEdit* edit)
 {
     if (!edit) return;
-    edit->setText(tr("测试失败"));
+    edit->setText(tr("Test failed"));
     edit->setStyleSheet("color: red;");
 }

@@ -1025,6 +1025,72 @@
         <translation>I2C input2电平命令失败</translation>
     </message>
     <message>
+        <source>Test failed</source>
+        <translation>测试失败</translation>
+    </message>
+    <message>
+        <source>Failure reason: %1</source>
+        <translation>失败原因：%1</translation>
+    </message>
+    <message>
+        <source>TX time: %1
+TX content: %2
+RX time: %3
+RX content: %4
+Parsed content: %5</source>
+        <translation>发送报文时间：%1
+发送报文内容：%2
+接收报文时间：%3
+接收报文内容：%4
+接收到的解析内容：%5</translation>
+    </message>
+    <message>
+        <source>TX time: %1
+TX content: %2
+RX time: %3
+RX content: %4
+Parsed content: -
+Failure reason: %5</source>
+        <translation>发送报文时间：%1
+发送报文内容：%2
+接收报文时间：%3
+接收报文内容：%4
+接收到的解析内容：-
+失败原因：%5</translation>
+    </message>
+    <message>
+        <source>TX time: %1
+TX content: %2
+RX time: -
+RX content: -
+Parsed content: -
+Failure reason: %3</source>
+        <translation>发送报文时间：%1
+发送报文内容：%2
+接收报文时间：-
+接收报文内容：-
+接收到的解析内容：-
+失败原因：%3</translation>
+    </message>
+    <message>
+        <source>[%1]
+TX time: %2
+TX content: %3
+RX time: %4
+RX content: %5
+Parsed content: %6</source>
+        <translation>[%1]
+发送报文时间：%2
+发送报文内容：%3
+接收报文时间：%4
+接收报文内容：%5
+接收到的解析内容：%6</translation>
+    </message>
+    <message>
+        <source>No service</source>
+        <translation>无服务</translation>
+    </message>
+    <message>
         <source>Please open serial port first</source>
         <translation>请先打开串口</translation>
     </message>
@@ -1275,10 +1341,6 @@
     <message>
         <source>No output from /etc/sw-version</source>
         <translation>/etc/sw-version 无输出</translation>
-    </message>
-    <message>
-        <source>测试失败</source>
-        <translation>测试失败</translation>
     </message>
     <message>
         <source>📊 All test results have been displayed above.</source>
