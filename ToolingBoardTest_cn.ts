@@ -993,6 +993,38 @@
         <translation>I2C继电器恢复低电平命令失败</translation>
     </message>
     <message>
+        <source>I2C relay restore low command: ./stm32_i2c_test 0x%1 0x0</source>
+        <translation>I2C继电器恢复低电平命令: ./stm32_i2c_test 0x%1 0x0</translation>
+    </message>
+    <message>
+        <source>I2C relay low command: ./stm32_i2c_test 0x%1 0x0</source>
+        <translation>I2C继电器低电平命令: ./stm32_i2c_test 0x%1 0x0</translation>
+    </message>
+    <message>
+        <source>I2C relay low command failed: ./stm32_i2c_test 0x%1 0x0</source>
+        <translation>I2C继电器低电平命令失败: ./stm32_i2c_test 0x%1 0x0</translation>
+    </message>
+    <message>
+        <source>I2C relay high command: ./stm32_i2c_test 0x%1 0x1</source>
+        <translation>I2C继电器高电平命令: ./stm32_i2c_test 0x%1 0x1</translation>
+    </message>
+    <message>
+        <source>I2C relay high command failed: ./stm32_i2c_test 0x%1 0x1</source>
+        <translation>I2C继电器高电平命令失败: ./stm32_i2c_test 0x%1 0x1</translation>
+    </message>
+    <message>
+        <source>I2C input2 level command: ./stm32_i2c_test 0x%1</source>
+        <translation>I2C input2电平命令: ./stm32_i2c_test 0x%1</translation>
+    </message>
+    <message>
+        <source>I2C input2 level command failed: ./stm32_i2c_test 0x%1</source>
+        <translation>I2C input2电平命令失败: ./stm32_i2c_test 0x%1</translation>
+    </message>
+    <message>
+        <source>I2C input2 level command failed</source>
+        <translation>I2C input2电平命令失败</translation>
+    </message>
+    <message>
         <source>Please open serial port first</source>
         <translation>请先打开串口</translation>
     </message>

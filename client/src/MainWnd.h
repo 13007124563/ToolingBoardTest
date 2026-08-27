@@ -134,20 +134,36 @@ protected:
     void proceedOneClickNextQueryOrFinish();
     void finishOneClickTest();
 
-    enum class PrinterPowerPhase {
+    enum class DualVoltageTestPhase {
         None,
         WaitLow,
         WaitHigh,
     };
-    bool runStm32I2cRelayCommand(quint8 relayArg, QString *output = nullptr);
-    bool startPrinterPowerQuery();
-    bool sendPrinterPowerSerialQuery();
-    void handlePrinterPowerSerialResponse(const Protocol::Frame &frame, const QString &parsedText);
-    void finalizePrinterPowerTest();
-    void failPrinterPowerTest(const QString &reason);
-    void restorePrinterPowerRelayToLow();
+    bool isDualVoltageBoardCmd(quint8 cmd) const;
+    bool dualVoltageTestConfig(quint8 boardCmd, quint8 &i2cCmd, QString &logTag) const;
+    QString dualVoltageI2cCommandLine(quint8 i2cCmd, quint8 relayArg) const;
+    bool runStm32I2cRelayCommand(quint8 i2cCmd, quint8 relayArg, QString *output = nullptr);
+    bool startDualVoltageQuery(quint8 boardCmd);
+    bool sendDualVoltageSerialQuery();
+    void handleDualVoltageSerialResponse(const Protocol::Frame &frame, const QString &parsedText);
+    void finalizeDualVoltageTest();
+    void failDualVoltageTest(const QString &reason);
+    void restoreDualVoltageRelayToLow();
     QString makeSerialExchangeDetailLog(const QString &stepLabel, const QString &parsedContent,
                                         const QString &rxContent = QString()) const;
+
+    enum class SingleVoltageTestPhase {
+        None,
+        WaitResponse,
+    };
+    bool isSingleVoltageBoardCmd(quint8 cmd) const;
+    QString singleVoltageI2cCommandLine(quint8 i2cCmd) const;
+    bool runStm32I2cSingleCommand(quint8 i2cCmd, QString *output = nullptr);
+    bool startSingleVoltageQuery(quint8 boardCmd);
+    bool sendSingleVoltageSerialQuery();
+    void handleSingleVoltageSerialResponse(const Protocol::Frame &frame, const QString &parsedText);
+    void finalizeSingleVoltageTest();
+    void failSingleVoltageTest(const QString &reason);
 
 protected slots:
 
@@ -223,14 +239,26 @@ private:
     bool     m_oneClickTestAwaitingQuery; // 一键测试等待串口查询回包
     int      m_oneClickQueryIndex;      // 一键测试当前查询指令索引
 
-    PrinterPowerPhase m_printerPowerPhase = PrinterPowerPhase::None;
-    QString m_printerTestDetailLog;
-    QString m_printerLowSummary;
-    QString m_printerHighSummary;
-    bool m_printerLowVoltageOk = false;
-    bool m_printerHighVoltageOk = false;
-    bool m_printerLowReadingValid = false;
-    bool m_printerHighReadingValid = false;
+    DualVoltageTestPhase m_dualVoltagePhase = DualVoltageTestPhase::None;
+    quint8 m_dualVoltageBoardCmd = 0;
+    quint8 m_dualVoltageI2cCmd = 0;
+    QString m_dualVoltageLogTag;
+    QString m_dualVoltageTestDetailLog;
+    QString m_dualVoltageLowSummary;
+    QString m_dualVoltageHighSummary;
+    bool m_dualVoltageLowOk = false;
+    bool m_dualVoltageHighOk = false;
+    bool m_dualVoltageLowReadingValid = false;
+    bool m_dualVoltageHighReadingValid = false;
+
+    SingleVoltageTestPhase m_singleVoltagePhase = SingleVoltageTestPhase::None;
+    quint8 m_singleVoltageBoardCmd = 0;
+    quint8 m_singleVoltageI2cCmd = 0;
+    QString m_singleVoltageLogTag;
+    QString m_singleVoltageTestDetailLog;
+    QString m_singleVoltageSummary;
+    bool m_singleVoltageOk = false;
+    bool m_singleVoltageReadingValid = false;
 };
 
 #endif // MAINWND_H

@@ -921,14 +921,30 @@ void MainWnd::proceedOneClickNextQueryOrFinish()
         if (cmd == Protocol::CmdStInputIoTest)
             info.append(static_cast<char>(0x00));
 
-        if (cmd == Protocol::CmdPrinterCn43Test) {
-            if (startPrinterPowerQuery()) {
-                qDebug() << "[DEBUG] [PrinterPower 0x03] one-click startPrinterPowerQuery ok, awaiting response";
+        if (isDualVoltageBoardCmd(cmd)) {
+            if (startDualVoltageQuery(cmd)) {
+                qDebug() << "[DEBUG]" << m_dualVoltageLogTag
+                         << "one-click startDualVoltageQuery ok, awaiting response";
                 m_oneClickTestAwaitingQuery = true;
                 return;
             }
-            qDebug() << "[DEBUG] [PrinterPower 0x03] one-click startPrinterPowerQuery failed, index="
-                     << m_oneClickQueryIndex;
+            qDebug() << "[DEBUG] one-click startDualVoltageQuery failed, boardCmd=0x"
+                     << QString::number(cmd, 16)
+                     << "index=" << m_oneClickQueryIndex;
+            ++m_oneClickQueryIndex;
+            continue;
+        }
+
+        if (isSingleVoltageBoardCmd(cmd)) {
+            if (startSingleVoltageQuery(cmd)) {
+                qDebug() << "[DEBUG]" << m_singleVoltageLogTag
+                         << "one-click startSingleVoltageQuery ok, awaiting response";
+                m_oneClickTestAwaitingQuery = true;
+                return;
+            }
+            qDebug() << "[DEBUG] one-click startSingleVoltageQuery failed, boardCmd=0x"
+                     << QString::number(cmd, 16)
+                     << "index=" << m_oneClickQueryIndex;
             ++m_oneClickQueryIndex;
             continue;
         }
@@ -1277,9 +1293,44 @@ bool MainWnd::sendBuiltFrame(quint8 cmd, const QByteArray &info)
     return m_serial.sendFrame(frame, cmd, seq, boardAddr);
 }
 
-bool MainWnd::runStm32I2cRelayCommand(quint8 relayArg, QString *output)
+bool MainWnd::isDualVoltageBoardCmd(quint8 cmd) const
+{
+    return cmd == Protocol::CmdPrinterCn43Test
+        || cmd == Protocol::CmdVout5vCn39Test
+        || cmd == Protocol::CmdVout12vCn47Test;
+}
+
+bool MainWnd::dualVoltageTestConfig(quint8 boardCmd, quint8 &i2cCmd, QString &logTag) const
+{
+    switch (boardCmd) {
+    case Protocol::CmdPrinterCn43Test:
+        i2cCmd = 0x31;
+        logTag = QStringLiteral("DualVoltage 0x03");
+        return true;
+    case Protocol::CmdVout5vCn39Test:
+        i2cCmd = 0x34;
+        logTag = QStringLiteral("DualVoltage 0x04");
+        return true;
+    case Protocol::CmdVout12vCn47Test:
+        i2cCmd = 0x3B;
+        logTag = QStringLiteral("DualVoltage 0x05");
+        return true;
+    default:
+        return false;
+    }
+}
+
+QString MainWnd::dualVoltageI2cCommandLine(quint8 i2cCmd, quint8 relayArg) const
+{
+    return QStringLiteral("$ /etc/zl_test/stm32_i2c_test 0x%1 0x%2")
+        .arg(i2cCmd, 2, 16, QChar('0'))
+        .arg(relayArg, 0, 16);
+}
+
+bool MainWnd::runStm32I2cRelayCommand(quint8 i2cCmd, quint8 relayArg, QString *output)
 {
 #ifdef Q_OS_WIN
+    Q_UNUSED(i2cCmd);
     const QString simulated = QStringLiteral("SUCCESS[00]\nTest completed successfully!");
     if (output)
         *output = simulated;
@@ -1288,12 +1339,14 @@ bool MainWnd::runStm32I2cRelayCommand(quint8 relayArg, QString *output)
     QProcess process;
     process.setWorkingDirectory(QStringLiteral("/etc/zl_test"));
     process.start(QStringLiteral("/etc/zl_test/stm32_i2c_test"),
-                  QStringList() << QStringLiteral("0x31")
+                  QStringList() << QStringLiteral("0x%1").arg(i2cCmd, 0, 16)
                                 << QStringLiteral("0x%1").arg(relayArg, 0, 16));
     if (!process.waitForFinished(10000)) {
         process.kill();
-        qDebug() << "[DEBUG] [PrinterPower 0x03] runStm32I2cRelayCommand timeout, relayArg=0x"
-                 << QString::number(relayArg, 16);
+        qDebug() << "[DEBUG]" << m_dualVoltageLogTag
+                 << "runStm32I2cRelayCommand timeout, i2cCmd=0x"
+                 << QString::number(i2cCmd, 16)
+                 << "relayArg=0x" << QString::number(relayArg, 16);
         return false;
     }
 
@@ -1303,8 +1356,10 @@ bool MainWnd::runStm32I2cRelayCommand(quint8 relayArg, QString *output)
         *output = out + err;
 
     if (process.exitCode() != 0) {
-        qDebug() << "[DEBUG] [PrinterPower 0x03] runStm32I2cRelayCommand failed, relayArg=0x"
-                 << QString::number(relayArg, 16)
+        qDebug() << "[DEBUG]" << m_dualVoltageLogTag
+                 << "runStm32I2cRelayCommand failed, i2cCmd=0x"
+                 << QString::number(i2cCmd, 16)
+                 << "relayArg=0x" << QString::number(relayArg, 16)
                  << "exitCode=" << process.exitCode()
                  << "output=" << (out + err).trimmed();
         return false;
@@ -1312,8 +1367,10 @@ bool MainWnd::runStm32I2cRelayCommand(quint8 relayArg, QString *output)
 
     if (!out.contains(QStringLiteral("SUCCESS"))
         && !out.contains(QStringLiteral("Test completed successfully"))) {
-        qDebug() << "[DEBUG] [PrinterPower 0x03] runStm32I2cRelayCommand missing SUCCESS, relayArg=0x"
-                 << QString::number(relayArg, 16)
+        qDebug() << "[DEBUG]" << m_dualVoltageLogTag
+                 << "runStm32I2cRelayCommand missing SUCCESS, i2cCmd=0x"
+                 << QString::number(i2cCmd, 16)
+                 << "relayArg=0x" << QString::number(relayArg, 16)
                  << "output=" << (out + err).trimmed();
         return false;
     }
@@ -1346,67 +1403,77 @@ QString MainWnd::makeSerialExchangeDetailLog(const QString &stepLabel, const QSt
              parsedContent.isEmpty() ? QStringLiteral("-") : parsedContent);
 }
 
-bool MainWnd::sendPrinterPowerSerialQuery()
+bool MainWnd::sendDualVoltageSerialQuery()
 {
     m_lastBoardTxHex.clear();
     m_lastBoardTxTime = QDateTime();
-    return sendBuiltFrame(Protocol::CmdPrinterCn43Test, QByteArray());
+    return sendBuiltFrame(m_dualVoltageBoardCmd, QByteArray());
 }
 
-void MainWnd::restorePrinterPowerRelayToLow()
+void MainWnd::restoreDualVoltageRelayToLow()
 {
     ui->lb_test_cmd_excute_return_msg->appendPlainText(
-        tr("$ /etc/zl_test/stm32_i2c_test 0x31 0x0"));
+        dualVoltageI2cCommandLine(m_dualVoltageI2cCmd, 0x0));
     QString i2cOutput;
-    const bool ok = runStm32I2cRelayCommand(0x0, &i2cOutput);
+    const bool ok = runStm32I2cRelayCommand(m_dualVoltageI2cCmd, 0x0, &i2cOutput);
     if (!i2cOutput.trimmed().isEmpty())
         ui->lb_test_cmd_excute_return_msg->appendPlainText(i2cOutput.trimmed());
 
-    if (!m_printerTestDetailLog.isEmpty())
-        m_printerTestDetailLog += QStringLiteral("\n\n");
-    m_printerTestDetailLog += tr("I2C relay restore low command: ./stm32_i2c_test 0x31 0x0");
+    if (!m_dualVoltageTestDetailLog.isEmpty())
+        m_dualVoltageTestDetailLog += QStringLiteral("\n\n");
+    m_dualVoltageTestDetailLog += tr("I2C relay restore low command: ./stm32_i2c_test 0x%1 0x0")
+        .arg(m_dualVoltageI2cCmd, 2, 16, QChar('0'));
     if (!i2cOutput.trimmed().isEmpty())
-        m_printerTestDetailLog += QStringLiteral("\n") + i2cOutput.trimmed();
+        m_dualVoltageTestDetailLog += QStringLiteral("\n") + i2cOutput.trimmed();
     if (!ok) {
-        qDebug() << "[DEBUG] [PrinterPower 0x03] restorePrinterPowerRelayToLow failed";
-        m_printerTestDetailLog += QStringLiteral("\n") + tr("I2C relay restore low command failed");
+        qDebug() << "[DEBUG]" << m_dualVoltageLogTag << "restoreDualVoltageRelayToLow failed";
+        m_dualVoltageTestDetailLog += QStringLiteral("\n") + tr("I2C relay restore low command failed");
     }
 }
 
-void MainWnd::failPrinterPowerTest(const QString &reason)
+void MainWnd::failDualVoltageTest(const QString &reason)
 {
-    qDebug() << "[DEBUG] [PrinterPower 0x03] failPrinterPowerTest, reason=" << reason
-             << "phase=" << static_cast<int>(m_printerPowerPhase);
+    qDebug() << "[DEBUG]" << m_dualVoltageLogTag << "failDualVoltageTest, reason=" << reason
+             << "phase=" << static_cast<int>(m_dualVoltagePhase);
 
-    if (QLineEdit *edit = boardTestResultEdit(Protocol::CmdPrinterCn43Test))
+    if (QLineEdit *edit = boardTestResultEdit(m_dualVoltageBoardCmd))
         setLabelFailed(edit);
 
-    if (!m_printerTestDetailLog.isEmpty())
-        m_printerTestDetailLog += QStringLiteral("\n\n");
-    m_printerTestDetailLog += tr("失败原因：%1").arg(reason);
+    if (!m_dualVoltageTestDetailLog.isEmpty())
+        m_dualVoltageTestDetailLog += QStringLiteral("\n\n");
+    m_dualVoltageTestDetailLog += tr("失败原因：%1").arg(reason);
 
-    restorePrinterPowerRelayToLow();
+    restoreDualVoltageRelayToLow();
 
     const QString summary = tr("测试失败");
-    saveSerialTestRecord(Protocol::CmdPrinterCn43Test, summary, m_printerTestDetailLog,
+    saveSerialTestRecord(m_dualVoltageBoardCmd, summary, m_dualVoltageTestDetailLog,
                          zl::EResultType_State_error);
 
-    m_printerPowerPhase = PrinterPowerPhase::None;
+    const QString logTag = m_dualVoltageLogTag;
+    m_dualVoltagePhase = DualVoltageTestPhase::None;
+    m_dualVoltageBoardCmd = 0;
+    m_dualVoltageI2cCmd = 0;
+    m_dualVoltageLogTag.clear();
 
     if (m_oneClickTestAwaitingQuery) {
-        qDebug() << "[DEBUG] [PrinterPower 0x03] failPrinterPowerTest proceed one-click, next index="
+        qDebug() << "[DEBUG]" << logTag
+                 << "failDualVoltageTest proceed one-click, next index="
                  << (m_oneClickQueryIndex + 1);
         ++m_oneClickQueryIndex;
         proceedOneClickNextQueryOrFinish();
     }
 }
 
-void MainWnd::finalizePrinterPowerTest()
+void MainWnd::finalizeDualVoltageTest()
 {
-    QLineEdit *edit = boardTestResultEdit(Protocol::CmdPrinterCn43Test);
+    QLineEdit *edit = boardTestResultEdit(m_dualVoltageBoardCmd);
     if (!edit) {
-        qDebug() << "[WARN] [PrinterPower 0x03] finalizePrinterPowerTest skip: no result edit";
-        m_printerPowerPhase = PrinterPowerPhase::None;
+        qDebug() << "[WARN]" << m_dualVoltageLogTag << "finalizeDualVoltageTest skip: no result edit";
+        restoreDualVoltageRelayToLow();
+        m_dualVoltagePhase = DualVoltageTestPhase::None;
+        m_dualVoltageBoardCmd = 0;
+        m_dualVoltageI2cCmd = 0;
+        m_dualVoltageLogTag.clear();
         if (m_oneClickTestAwaitingQuery) {
             ++m_oneClickQueryIndex;
             proceedOneClickNextQueryOrFinish();
@@ -1415,61 +1482,68 @@ void MainWnd::finalizePrinterPowerTest()
     }
 
     QString displayText;
-    if (m_printerLowReadingValid)
-        displayText += m_printerLowSummary;
+    if (m_dualVoltageLowReadingValid)
+        displayText += m_dualVoltageLowSummary;
     else
         displayText += tr("Low voltage: N/A");
 
     displayText += QStringLiteral(" | ");
 
-    if (m_printerHighReadingValid)
-        displayText += m_printerHighSummary;
+    if (m_dualVoltageHighReadingValid)
+        displayText += m_dualVoltageHighSummary;
     else
         displayText += tr("High voltage: N/A");
 
     edit->setText(displayText);
 
-    const bool overallOk = m_printerLowReadingValid && m_printerHighReadingValid
-        && m_printerLowVoltageOk && m_printerHighVoltageOk;
+    const bool overallOk = m_dualVoltageLowReadingValid && m_dualVoltageHighReadingValid
+        && m_dualVoltageLowOk && m_dualVoltageHighOk;
 
-    restorePrinterPowerRelayToLow();
+    restoreDualVoltageRelayToLow();
 
     if (overallOk) {
-        qDebug() << "[DEBUG] [PrinterPower 0x03] finalizePrinterPowerTest success:"
+        qDebug() << "[DEBUG]" << m_dualVoltageLogTag << "finalizeDualVoltageTest success:"
                  << displayText;
         edit->setStyleSheet("");
-        saveSerialTestRecord(Protocol::CmdPrinterCn43Test, displayText, m_printerTestDetailLog,
+        saveSerialTestRecord(m_dualVoltageBoardCmd, displayText, m_dualVoltageTestDetailLog,
                              zl::EResultType_Success);
     } else {
-        qDebug() << "[DEBUG] [PrinterPower 0x03] finalizePrinterPowerTest failed:"
-                 << "lowValid=" << m_printerLowReadingValid
-                 << "lowOk=" << m_printerLowVoltageOk
-                 << "highValid=" << m_printerHighReadingValid
-                 << "highOk=" << m_printerHighVoltageOk
+        qDebug() << "[DEBUG]" << m_dualVoltageLogTag << "finalizeDualVoltageTest failed:"
+                 << "lowValid=" << m_dualVoltageLowReadingValid
+                 << "lowOk=" << m_dualVoltageLowOk
+                 << "highValid=" << m_dualVoltageHighReadingValid
+                 << "highOk=" << m_dualVoltageHighOk
                  << "display=" << displayText;
         setLabelFailed(edit);
-        if (!m_printerTestDetailLog.isEmpty())
-            m_printerTestDetailLog += QStringLiteral("\n\n");
-        if (!m_printerLowReadingValid || !m_printerLowVoltageOk)
-            m_printerTestDetailLog += tr("Low voltage test failed");
-        if ((!m_printerLowReadingValid || !m_printerLowVoltageOk)
-            && (!m_printerHighReadingValid || !m_printerHighVoltageOk))
-            m_printerTestDetailLog += QStringLiteral(" | ");
-        if (!m_printerHighReadingValid || !m_printerHighVoltageOk)
-            m_printerTestDetailLog += tr("High voltage test failed");
-        saveSerialTestRecord(Protocol::CmdPrinterCn43Test, tr("测试失败"), m_printerTestDetailLog,
+        if (!m_dualVoltageTestDetailLog.isEmpty())
+            m_dualVoltageTestDetailLog += QStringLiteral("\n\n");
+        if (!m_dualVoltageLowReadingValid || !m_dualVoltageLowOk)
+            m_dualVoltageTestDetailLog += tr("Low voltage test failed");
+        if ((!m_dualVoltageLowReadingValid || !m_dualVoltageLowOk)
+            && (!m_dualVoltageHighReadingValid || !m_dualVoltageHighOk))
+            m_dualVoltageTestDetailLog += QStringLiteral(" | ");
+        if (!m_dualVoltageHighReadingValid || !m_dualVoltageHighOk)
+            m_dualVoltageTestDetailLog += tr("High voltage test failed");
+        saveSerialTestRecord(m_dualVoltageBoardCmd, tr("测试失败"), m_dualVoltageTestDetailLog,
                              zl::EResultType_State_error);
     }
 
-    m_printerPowerPhase = PrinterPowerPhase::None;
+    const QString logTag = m_dualVoltageLogTag;
+    m_dualVoltagePhase = DualVoltageTestPhase::None;
+    m_dualVoltageBoardCmd = 0;
+    m_dualVoltageI2cCmd = 0;
+    m_dualVoltageLogTag.clear();
 
     if (m_oneClickTestAwaitingQuery) {
-        qDebug() << "[DEBUG] [PrinterPower 0x03] finalizePrinterPowerTest proceed one-click, next index="
+        qDebug() << "[DEBUG]" << logTag
+                 << "finalizeDualVoltageTest proceed one-click, next index="
                  << (m_oneClickQueryIndex + 1);
         ++m_oneClickQueryIndex;
         proceedOneClickNextQueryOrFinish();
     }
 }
+
+void MainWnd::handleDualVoltageSerialResponse(const Protocol::Frame &frame, const QString &parsedText)
 {
     const QString rxContent = Protocol::ProtocolCodec::frameToHex(frame.raw);
 
@@ -1477,148 +1551,428 @@ void MainWnd::finalizePrinterPowerTest()
         const QString failReason = parsedText.trimmed().isEmpty()
             ? tr("Response error, resp=0x%1").arg(frame.resp, 2, 16, QChar('0'))
             : parsedText.trimmed();
-        if (!m_printerTestDetailLog.isEmpty())
-            m_printerTestDetailLog += QStringLiteral("\n\n");
-        const QString stepLabel = (m_printerPowerPhase == PrinterPowerPhase::WaitLow)
+        if (!m_dualVoltageTestDetailLog.isEmpty())
+            m_dualVoltageTestDetailLog += QStringLiteral("\n\n");
+        const QString stepLabel = (m_dualVoltagePhase == DualVoltageTestPhase::WaitLow)
             ? tr("Read low voltage")
             : tr("Read high voltage");
-        m_printerTestDetailLog += makeSerialExchangeDetailLog(stepLabel, failReason, rxContent);
-        qDebug() << "[DEBUG] [PrinterPower 0x03] handlePrinterPowerSerialResponse resp error, phase="
-                 << static_cast<int>(m_printerPowerPhase)
+        m_dualVoltageTestDetailLog += makeSerialExchangeDetailLog(stepLabel, failReason, rxContent);
+        qDebug() << "[DEBUG]" << m_dualVoltageLogTag
+                 << "handleDualVoltageSerialResponse resp error, phase="
+                 << static_cast<int>(m_dualVoltagePhase)
                  << "resp=0x" << QString::number(frame.resp, 16)
                  << "reason=" << failReason;
-        failPrinterPowerTest(failReason);
+        failDualVoltageTest(failReason);
         return;
     }
 
     Protocol::VoltageReading reading;
     if (!Protocol::ResponseParser::parseSingleVoltage(frame, reading)) {
         const QString failReason = tr("Failed to parse voltage data");
-        if (!m_printerTestDetailLog.isEmpty())
-            m_printerTestDetailLog += QStringLiteral("\n\n");
-        const QString stepLabel = (m_printerPowerPhase == PrinterPowerPhase::WaitLow)
+        if (!m_dualVoltageTestDetailLog.isEmpty())
+            m_dualVoltageTestDetailLog += QStringLiteral("\n\n");
+        const QString stepLabel = (m_dualVoltagePhase == DualVoltageTestPhase::WaitLow)
             ? tr("Read low voltage")
             : tr("Read high voltage");
-        m_printerTestDetailLog += makeSerialExchangeDetailLog(stepLabel, failReason, rxContent);
-        qDebug() << "[DEBUG] [PrinterPower 0x03] handlePrinterPowerSerialResponse parse failed, phase="
-                 << static_cast<int>(m_printerPowerPhase)
+        m_dualVoltageTestDetailLog += makeSerialExchangeDetailLog(stepLabel, failReason, rxContent);
+        qDebug() << "[DEBUG]" << m_dualVoltageLogTag
+                 << "handleDualVoltageSerialResponse parse failed, phase="
+                 << static_cast<int>(m_dualVoltagePhase)
                  << "info=" << Protocol::ProtocolCodec::frameToHex(frame.info);
-        failPrinterPowerTest(failReason);
+        failDualVoltageTest(failReason);
         return;
     }
 
     const QString parsedContent = parsedText.trimmed().isEmpty()
         ? Protocol::ResponseParser::formatVoltageSummary(
-              (m_printerPowerPhase == PrinterPowerPhase::WaitLow) ? tr("Low voltage") : tr("High voltage"),
+              (m_dualVoltagePhase == DualVoltageTestPhase::WaitLow) ? tr("Low voltage") : tr("High voltage"),
               reading)
         : parsedText.trimmed();
 
-    if (m_printerPowerPhase == PrinterPowerPhase::WaitLow) {
-        m_printerLowSummary = Protocol::ResponseParser::formatVoltageSummary(tr("Low voltage"), reading);
-        m_printerLowVoltageOk = reading.isNormal();
-        m_printerLowReadingValid = true;
+    if (m_dualVoltagePhase == DualVoltageTestPhase::WaitLow) {
+        m_dualVoltageLowSummary = Protocol::ResponseParser::formatVoltageSummary(tr("Low voltage"), reading);
+        m_dualVoltageLowOk = reading.isNormal();
+        m_dualVoltageLowReadingValid = true;
 
-        if (!m_printerTestDetailLog.isEmpty())
-            m_printerTestDetailLog += QStringLiteral("\n\n");
-        m_printerTestDetailLog += makeSerialExchangeDetailLog(tr("Read low voltage"), parsedContent, rxContent);
+        if (!m_dualVoltageTestDetailLog.isEmpty())
+            m_dualVoltageTestDetailLog += QStringLiteral("\n\n");
+        m_dualVoltageTestDetailLog += makeSerialExchangeDetailLog(tr("Read low voltage"), parsedContent, rxContent);
 
-        qDebug() << "[DEBUG] [PrinterPower 0x03] low voltage read:"
-                 << m_printerLowSummary
-                 << "ok=" << m_printerLowVoltageOk;
+        qDebug() << "[DEBUG]" << m_dualVoltageLogTag << "low voltage read:"
+                 << m_dualVoltageLowSummary
+                 << "ok=" << m_dualVoltageLowOk;
 
         ui->lb_test_cmd_excute_return_msg->appendPlainText(
-            tr("$ /etc/zl_test/stm32_i2c_test 0x31 0x1"));
+            dualVoltageI2cCommandLine(m_dualVoltageI2cCmd, 0x1));
         QString i2cOutput;
-        if (!runStm32I2cRelayCommand(0x1, &i2cOutput)) {
+        if (!runStm32I2cRelayCommand(m_dualVoltageI2cCmd, 0x1, &i2cOutput)) {
             if (!i2cOutput.trimmed().isEmpty())
                 ui->lb_test_cmd_excute_return_msg->appendPlainText(i2cOutput.trimmed());
-            if (!m_printerTestDetailLog.isEmpty())
-                m_printerTestDetailLog += QStringLiteral("\n\n");
-            m_printerTestDetailLog += tr("I2C relay high command failed: ./stm32_i2c_test 0x31 0x1");
+            if (!m_dualVoltageTestDetailLog.isEmpty())
+                m_dualVoltageTestDetailLog += QStringLiteral("\n\n");
+            m_dualVoltageTestDetailLog += tr("I2C relay high command failed: ./stm32_i2c_test 0x%1 0x1")
+                .arg(m_dualVoltageI2cCmd, 2, 16, QChar('0'));
             if (!i2cOutput.trimmed().isEmpty())
-                m_printerTestDetailLog += QStringLiteral("\n") + i2cOutput.trimmed();
-            qDebug() << "[DEBUG] [PrinterPower 0x03] I2C relay high command failed after low voltage read";
-            failPrinterPowerTest(tr("I2C relay high command failed"));
+                m_dualVoltageTestDetailLog += QStringLiteral("\n") + i2cOutput.trimmed();
+            qDebug() << "[DEBUG]" << m_dualVoltageLogTag
+                     << "I2C relay high command failed after low voltage read";
+            failDualVoltageTest(tr("I2C relay high command failed"));
             return;
         }
         if (!i2cOutput.trimmed().isEmpty())
             ui->lb_test_cmd_excute_return_msg->appendPlainText(i2cOutput.trimmed());
-        if (!m_printerTestDetailLog.isEmpty())
-            m_printerTestDetailLog += QStringLiteral("\n\n");
-        m_printerTestDetailLog += tr("I2C relay high command: ./stm32_i2c_test 0x31 0x1");
+        if (!m_dualVoltageTestDetailLog.isEmpty())
+            m_dualVoltageTestDetailLog += QStringLiteral("\n\n");
+        m_dualVoltageTestDetailLog += tr("I2C relay high command: ./stm32_i2c_test 0x%1 0x1")
+            .arg(m_dualVoltageI2cCmd, 2, 16, QChar('0'));
         if (!i2cOutput.trimmed().isEmpty())
-            m_printerTestDetailLog += QStringLiteral("\n") + i2cOutput.trimmed();
+            m_dualVoltageTestDetailLog += QStringLiteral("\n") + i2cOutput.trimmed();
 
-        m_printerPowerPhase = PrinterPowerPhase::WaitHigh;
-        if (!sendPrinterPowerSerialQuery()) {
-            qDebug() << "[DEBUG] [PrinterPower 0x03] send high voltage query failed after I2C relay high";
-            failPrinterPowerTest(tr("Failed to send high voltage query"));
+        m_dualVoltagePhase = DualVoltageTestPhase::WaitHigh;
+        if (!sendDualVoltageSerialQuery()) {
+            qDebug() << "[DEBUG]" << m_dualVoltageLogTag
+                     << "send high voltage query failed after I2C relay high";
+            failDualVoltageTest(tr("Failed to send high voltage query"));
         }
-        qDebug() << "[DEBUG] [PrinterPower 0x03] low voltage step done, phase=WaitHigh";
+        qDebug() << "[DEBUG]" << m_dualVoltageLogTag << "low voltage step done, phase=WaitHigh";
         return;
     }
 
-    if (m_printerPowerPhase == PrinterPowerPhase::WaitHigh) {
-        m_printerHighSummary = Protocol::ResponseParser::formatVoltageSummary(tr("High voltage"), reading);
-        m_printerHighVoltageOk = reading.isNormal();
-        m_printerHighReadingValid = true;
+    if (m_dualVoltagePhase == DualVoltageTestPhase::WaitHigh) {
+        m_dualVoltageHighSummary = Protocol::ResponseParser::formatVoltageSummary(tr("High voltage"), reading);
+        m_dualVoltageHighOk = reading.isNormal();
+        m_dualVoltageHighReadingValid = true;
 
-        if (!m_printerTestDetailLog.isEmpty())
-            m_printerTestDetailLog += QStringLiteral("\n\n");
-        m_printerTestDetailLog += makeSerialExchangeDetailLog(tr("Read high voltage"), parsedContent, rxContent);
+        if (!m_dualVoltageTestDetailLog.isEmpty())
+            m_dualVoltageTestDetailLog += QStringLiteral("\n\n");
+        m_dualVoltageTestDetailLog += makeSerialExchangeDetailLog(tr("Read high voltage"), parsedContent, rxContent);
 
-        qDebug() << "[DEBUG] [PrinterPower 0x03] high voltage read ok, finalize test:"
-                 << m_printerHighSummary;
-        finalizePrinterPowerTest();
+        qDebug() << "[DEBUG]" << m_dualVoltageLogTag << "high voltage read ok, finalize test:"
+                 << m_dualVoltageHighSummary;
+        finalizeDualVoltageTest();
         return;
     }
 
-    qDebug() << "[WARN] [PrinterPower 0x03] handlePrinterPowerSerialResponse unexpected phase="
-             << static_cast<int>(m_printerPowerPhase);
+    qDebug() << "[WARN]" << m_dualVoltageLogTag
+             << "handleDualVoltageSerialResponse unexpected phase="
+             << static_cast<int>(m_dualVoltagePhase);
 }
 
-bool MainWnd::startPrinterPowerQuery()
+bool MainWnd::startDualVoltageQuery(quint8 boardCmd)
 {
-    qDebug() << "[DEBUG] [PrinterPower 0x03] startPrinterPowerQuery begin";
+    quint8 i2cCmd = 0;
+    QString logTag;
+    if (!dualVoltageTestConfig(boardCmd, i2cCmd, logTag)) {
+        qDebug() << "[WARN] startDualVoltageQuery unsupported boardCmd=0x"
+                 << QString::number(boardCmd, 16);
+        return false;
+    }
 
-    m_printerPowerPhase = PrinterPowerPhase::None;
-    m_printerTestDetailLog.clear();
-    m_printerLowSummary.clear();
-    m_printerHighSummary.clear();
-    m_printerLowVoltageOk = false;
-    m_printerHighVoltageOk = false;
-    m_printerLowReadingValid = false;
-    m_printerHighReadingValid = false;
+    m_dualVoltageBoardCmd = boardCmd;
+    m_dualVoltageI2cCmd = i2cCmd;
+    m_dualVoltageLogTag = logTag;
 
-    m_lastBoardQueryCmd = Protocol::CmdPrinterCn43Test;
-    clearBoardTestResultField(Protocol::CmdPrinterCn43Test);
+    qDebug() << "[DEBUG]" << m_dualVoltageLogTag << "startDualVoltageQuery begin";
+
+    m_dualVoltagePhase = DualVoltageTestPhase::None;
+    m_dualVoltageTestDetailLog.clear();
+    m_dualVoltageLowSummary.clear();
+    m_dualVoltageHighSummary.clear();
+    m_dualVoltageLowOk = false;
+    m_dualVoltageHighOk = false;
+    m_dualVoltageLowReadingValid = false;
+    m_dualVoltageHighReadingValid = false;
+
+    m_lastBoardQueryCmd = boardCmd;
+    clearBoardTestResultField(boardCmd);
 
     ui->lb_test_cmd_excute_return_msg->appendPlainText(
-        tr("$ /etc/zl_test/stm32_i2c_test 0x31 0x0"));
+        dualVoltageI2cCommandLine(m_dualVoltageI2cCmd, 0x0));
     QString i2cOutput;
-    if (!runStm32I2cRelayCommand(0x0, &i2cOutput)) {
+    if (!runStm32I2cRelayCommand(m_dualVoltageI2cCmd, 0x0, &i2cOutput)) {
         if (!i2cOutput.trimmed().isEmpty())
             ui->lb_test_cmd_excute_return_msg->appendPlainText(i2cOutput.trimmed());
-        m_printerTestDetailLog = tr("I2C relay low command failed: ./stm32_i2c_test 0x31 0x0");
+        m_dualVoltageTestDetailLog = tr("I2C relay low command failed: ./stm32_i2c_test 0x%1 0x0")
+            .arg(m_dualVoltageI2cCmd, 2, 16, QChar('0'));
         if (!i2cOutput.trimmed().isEmpty())
-            m_printerTestDetailLog += QStringLiteral("\n") + i2cOutput.trimmed();
-        qDebug() << "[DEBUG] [PrinterPower 0x03] startPrinterPowerQuery I2C relay low command failed";
-        failPrinterPowerTest(tr("I2C relay low command failed"));
+            m_dualVoltageTestDetailLog += QStringLiteral("\n") + i2cOutput.trimmed();
+        qDebug() << "[DEBUG]" << m_dualVoltageLogTag
+                 << "startDualVoltageQuery I2C relay low command failed";
+        failDualVoltageTest(tr("I2C relay low command failed"));
         return false;
     }
     if (!i2cOutput.trimmed().isEmpty())
         ui->lb_test_cmd_excute_return_msg->appendPlainText(i2cOutput.trimmed());
-    m_printerTestDetailLog = tr("I2C relay low command: ./stm32_i2c_test 0x31 0x0");
+    m_dualVoltageTestDetailLog = tr("I2C relay low command: ./stm32_i2c_test 0x%1 0x0")
+        .arg(m_dualVoltageI2cCmd, 2, 16, QChar('0'));
     if (!i2cOutput.trimmed().isEmpty())
-        m_printerTestDetailLog += QStringLiteral("\n") + i2cOutput.trimmed();
+        m_dualVoltageTestDetailLog += QStringLiteral("\n") + i2cOutput.trimmed();
 
-    m_printerPowerPhase = PrinterPowerPhase::WaitLow;
-    if (!sendPrinterPowerSerialQuery()) {
-        qDebug() << "[DEBUG] [PrinterPower 0x03] startPrinterPowerQuery send low voltage query failed";
-        failPrinterPowerTest(tr("Failed to send low voltage query"));
+    m_dualVoltagePhase = DualVoltageTestPhase::WaitLow;
+    if (!sendDualVoltageSerialQuery()) {
+        qDebug() << "[DEBUG]" << m_dualVoltageLogTag
+                 << "startDualVoltageQuery send low voltage query failed";
+        failDualVoltageTest(tr("Failed to send low voltage query"));
         return false;
     }
-    qDebug() << "[DEBUG] [PrinterPower 0x03] startPrinterPowerQuery ok, phase=WaitLow";
+    qDebug() << "[DEBUG]" << m_dualVoltageLogTag << "startDualVoltageQuery ok, phase=WaitLow";
+    return true;
+}
+
+bool MainWnd::isSingleVoltageBoardCmd(quint8 cmd) const
+{
+    return cmd == Protocol::CmdProximityCn13Test;
+}
+
+QString MainWnd::singleVoltageI2cCommandLine(quint8 i2cCmd) const
+{
+    return QStringLiteral("$ /etc/zl_test/stm32_i2c_test 0x%1")
+        .arg(i2cCmd, 2, 16, QChar('0'));
+}
+
+bool MainWnd::runStm32I2cSingleCommand(quint8 i2cCmd, QString *output)
+{
+#ifdef Q_OS_WIN
+    Q_UNUSED(i2cCmd);
+    const QString simulated = QStringLiteral("SUCCESS[00]\nTest completed successfully!");
+    if (output)
+        *output = simulated;
+    return true;
+#else
+    QProcess process;
+    process.setWorkingDirectory(QStringLiteral("/etc/zl_test"));
+    process.start(QStringLiteral("/etc/zl_test/stm32_i2c_test"),
+                  QStringList() << QStringLiteral("0x%1").arg(i2cCmd, 0, 16));
+    if (!process.waitForFinished(10000)) {
+        process.kill();
+        qDebug() << "[DEBUG]" << m_singleVoltageLogTag
+                 << "runStm32I2cSingleCommand timeout, i2cCmd=0x"
+                 << QString::number(i2cCmd, 16);
+        return false;
+    }
+
+    const QString out = QString::fromUtf8(process.readAllStandardOutput());
+    const QString err = QString::fromUtf8(process.readAllStandardError());
+    if (output)
+        *output = out + err;
+
+    if (process.exitCode() != 0) {
+        qDebug() << "[DEBUG]" << m_singleVoltageLogTag
+                 << "runStm32I2cSingleCommand failed, i2cCmd=0x"
+                 << QString::number(i2cCmd, 16)
+                 << "exitCode=" << process.exitCode()
+                 << "output=" << (out + err).trimmed();
+        return false;
+    }
+
+    if (!out.contains(QStringLiteral("SUCCESS"))
+        && !out.contains(QStringLiteral("Test completed successfully"))) {
+        qDebug() << "[DEBUG]" << m_singleVoltageLogTag
+                 << "runStm32I2cSingleCommand missing SUCCESS, i2cCmd=0x"
+                 << QString::number(i2cCmd, 16)
+                 << "output=" << (out + err).trimmed();
+        return false;
+    }
+
+    return true;
+#endif
+}
+
+bool MainWnd::sendSingleVoltageSerialQuery()
+{
+    m_lastBoardTxHex.clear();
+    m_lastBoardTxTime = QDateTime();
+    return sendBuiltFrame(m_singleVoltageBoardCmd, QByteArray());
+}
+
+void MainWnd::failSingleVoltageTest(const QString &reason)
+{
+    qDebug() << "[DEBUG]" << m_singleVoltageLogTag << "failSingleVoltageTest, reason=" << reason
+             << "phase=" << static_cast<int>(m_singleVoltagePhase);
+
+    if (QLineEdit *edit = boardTestResultEdit(m_singleVoltageBoardCmd))
+        setLabelFailed(edit);
+
+    if (!m_singleVoltageTestDetailLog.isEmpty())
+        m_singleVoltageTestDetailLog += QStringLiteral("\n\n");
+    m_singleVoltageTestDetailLog += tr("失败原因：%1").arg(reason);
+
+    const QString summary = tr("测试失败");
+    saveSerialTestRecord(m_singleVoltageBoardCmd, summary, m_singleVoltageTestDetailLog,
+                         zl::EResultType_State_error);
+
+    const QString logTag = m_singleVoltageLogTag;
+    m_singleVoltagePhase = SingleVoltageTestPhase::None;
+    m_singleVoltageBoardCmd = 0;
+    m_singleVoltageI2cCmd = 0;
+    m_singleVoltageLogTag.clear();
+
+    if (m_oneClickTestAwaitingQuery) {
+        qDebug() << "[DEBUG]" << logTag
+                 << "failSingleVoltageTest proceed one-click, next index="
+                 << (m_oneClickQueryIndex + 1);
+        ++m_oneClickQueryIndex;
+        proceedOneClickNextQueryOrFinish();
+    }
+}
+
+void MainWnd::finalizeSingleVoltageTest()
+{
+    QLineEdit *edit = boardTestResultEdit(m_singleVoltageBoardCmd);
+    if (!edit) {
+        qDebug() << "[WARN]" << m_singleVoltageLogTag << "finalizeSingleVoltageTest skip: no result edit";
+        m_singleVoltagePhase = SingleVoltageTestPhase::None;
+        m_singleVoltageBoardCmd = 0;
+        m_singleVoltageI2cCmd = 0;
+        m_singleVoltageLogTag.clear();
+        if (m_oneClickTestAwaitingQuery) {
+            ++m_oneClickQueryIndex;
+            proceedOneClickNextQueryOrFinish();
+        }
+        return;
+    }
+
+    edit->setText(m_singleVoltageSummary);
+
+    const bool overallOk = m_singleVoltageReadingValid && m_singleVoltageOk;
+
+    if (overallOk) {
+        qDebug() << "[DEBUG]" << m_singleVoltageLogTag << "finalizeSingleVoltageTest success:"
+                 << m_singleVoltageSummary;
+        edit->setStyleSheet("");
+        saveSerialTestRecord(m_singleVoltageBoardCmd, m_singleVoltageSummary, m_singleVoltageTestDetailLog,
+                             zl::EResultType_Success);
+    } else {
+        qDebug() << "[DEBUG]" << m_singleVoltageLogTag << "finalizeSingleVoltageTest failed:"
+                 << "valid=" << m_singleVoltageReadingValid
+                 << "ok=" << m_singleVoltageOk
+                 << "display=" << m_singleVoltageSummary;
+        setLabelFailed(edit);
+        if (!m_singleVoltageTestDetailLog.isEmpty())
+            m_singleVoltageTestDetailLog += QStringLiteral("\n\n");
+        m_singleVoltageTestDetailLog += tr("High voltage test failed");
+        saveSerialTestRecord(m_singleVoltageBoardCmd, tr("测试失败"), m_singleVoltageTestDetailLog,
+                             zl::EResultType_State_error);
+    }
+
+    const QString logTag = m_singleVoltageLogTag;
+    m_singleVoltagePhase = SingleVoltageTestPhase::None;
+    m_singleVoltageBoardCmd = 0;
+    m_singleVoltageI2cCmd = 0;
+    m_singleVoltageLogTag.clear();
+
+    if (m_oneClickTestAwaitingQuery) {
+        qDebug() << "[DEBUG]" << logTag
+                 << "finalizeSingleVoltageTest proceed one-click, next index="
+                 << (m_oneClickQueryIndex + 1);
+        ++m_oneClickQueryIndex;
+        proceedOneClickNextQueryOrFinish();
+    }
+}
+
+void MainWnd::handleSingleVoltageSerialResponse(const Protocol::Frame &frame, const QString &parsedText)
+{
+    const QString rxContent = Protocol::ProtocolCodec::frameToHex(frame.raw);
+
+    if (frame.resp != Protocol::kRespUpOk) {
+        const QString failReason = parsedText.trimmed().isEmpty()
+            ? tr("Response error, resp=0x%1").arg(frame.resp, 2, 16, QChar('0'))
+            : parsedText.trimmed();
+        if (!m_singleVoltageTestDetailLog.isEmpty())
+            m_singleVoltageTestDetailLog += QStringLiteral("\n\n");
+        m_singleVoltageTestDetailLog += makeSerialExchangeDetailLog(tr("Read high voltage"), failReason, rxContent);
+        qDebug() << "[DEBUG]" << m_singleVoltageLogTag
+                 << "handleSingleVoltageSerialResponse resp error, resp=0x"
+                 << QString::number(frame.resp, 16)
+                 << "reason=" << failReason;
+        failSingleVoltageTest(failReason);
+        return;
+    }
+
+    Protocol::VoltageReading reading;
+    if (!Protocol::ResponseParser::parseSingleVoltage(frame, reading)) {
+        const QString failReason = tr("Failed to parse voltage data");
+        if (!m_singleVoltageTestDetailLog.isEmpty())
+            m_singleVoltageTestDetailLog += QStringLiteral("\n\n");
+        m_singleVoltageTestDetailLog += makeSerialExchangeDetailLog(tr("Read high voltage"), failReason, rxContent);
+        qDebug() << "[DEBUG]" << m_singleVoltageLogTag
+                 << "handleSingleVoltageSerialResponse parse failed, info="
+                 << Protocol::ProtocolCodec::frameToHex(frame.info);
+        failSingleVoltageTest(failReason);
+        return;
+    }
+
+    const QString parsedContent = parsedText.trimmed().isEmpty()
+        ? Protocol::ResponseParser::formatVoltageSummary(tr("High voltage"), reading)
+        : parsedText.trimmed();
+
+    m_singleVoltageSummary = Protocol::ResponseParser::formatVoltageSummary(tr("High voltage"), reading);
+    m_singleVoltageOk = reading.isNormal();
+    m_singleVoltageReadingValid = true;
+
+    if (!m_singleVoltageTestDetailLog.isEmpty())
+        m_singleVoltageTestDetailLog += QStringLiteral("\n\n");
+    m_singleVoltageTestDetailLog += makeSerialExchangeDetailLog(tr("Read high voltage"), parsedContent, rxContent);
+
+    qDebug() << "[DEBUG]" << m_singleVoltageLogTag << "high voltage read:"
+             << m_singleVoltageSummary
+             << "ok=" << m_singleVoltageOk;
+
+    finalizeSingleVoltageTest();
+}
+
+bool MainWnd::startSingleVoltageQuery(quint8 boardCmd)
+{
+    if (boardCmd != Protocol::CmdProximityCn13Test) {
+        qDebug() << "[WARN] startSingleVoltageQuery unsupported boardCmd=0x"
+                 << QString::number(boardCmd, 16);
+        return false;
+    }
+
+    m_singleVoltageBoardCmd = boardCmd;
+    m_singleVoltageI2cCmd = 0x07;
+    m_singleVoltageLogTag = QStringLiteral("SingleVoltage 0x06");
+
+    qDebug() << "[DEBUG]" << m_singleVoltageLogTag << "startSingleVoltageQuery begin";
+
+    m_singleVoltagePhase = SingleVoltageTestPhase::None;
+    m_singleVoltageTestDetailLog.clear();
+    m_singleVoltageSummary.clear();
+    m_singleVoltageOk = false;
+    m_singleVoltageReadingValid = false;
+
+    m_lastBoardQueryCmd = boardCmd;
+    clearBoardTestResultField(boardCmd);
+
+    ui->lb_test_cmd_excute_return_msg->appendPlainText(
+        singleVoltageI2cCommandLine(m_singleVoltageI2cCmd));
+    QString i2cOutput;
+    if (!runStm32I2cSingleCommand(m_singleVoltageI2cCmd, &i2cOutput)) {
+        if (!i2cOutput.trimmed().isEmpty())
+            ui->lb_test_cmd_excute_return_msg->appendPlainText(i2cOutput.trimmed());
+        m_singleVoltageTestDetailLog = tr("I2C input2 level command failed: ./stm32_i2c_test 0x%1")
+            .arg(m_singleVoltageI2cCmd, 2, 16, QChar('0'));
+        if (!i2cOutput.trimmed().isEmpty())
+            m_singleVoltageTestDetailLog += QStringLiteral("\n") + i2cOutput.trimmed();
+        qDebug() << "[DEBUG]" << m_singleVoltageLogTag << "startSingleVoltageQuery I2C command failed";
+        failSingleVoltageTest(tr("I2C input2 level command failed"));
+        return false;
+    }
+    if (!i2cOutput.trimmed().isEmpty())
+        ui->lb_test_cmd_excute_return_msg->appendPlainText(i2cOutput.trimmed());
+    m_singleVoltageTestDetailLog = tr("I2C input2 level command: ./stm32_i2c_test 0x%1")
+        .arg(m_singleVoltageI2cCmd, 2, 16, QChar('0'));
+    if (!i2cOutput.trimmed().isEmpty())
+        m_singleVoltageTestDetailLog += QStringLiteral("\n") + i2cOutput.trimmed();
+
+    m_singleVoltagePhase = SingleVoltageTestPhase::WaitResponse;
+    if (!sendSingleVoltageSerialQuery()) {
+        qDebug() << "[DEBUG]" << m_singleVoltageLogTag
+                 << "startSingleVoltageQuery send high voltage query failed";
+        failSingleVoltageTest(tr("Failed to send high voltage query"));
+        return false;
+    }
+    qDebug() << "[DEBUG]" << m_singleVoltageLogTag << "startSingleVoltageQuery ok, phase=WaitResponse";
     return true;
 }
 
@@ -1638,9 +1992,17 @@ void MainWnd::sendSelectedBoardQuery()
 
     clearBoardTestResultField(cmd);
 
-    if (cmd == Protocol::CmdPrinterCn43Test) {
-        qDebug() << "[DEBUG] [PrinterPower 0x03] sendSelectedBoardQuery start printer power test";
-        startPrinterPowerQuery();
+    if (isDualVoltageBoardCmd(cmd)) {
+        qDebug() << "[DEBUG] sendSelectedBoardQuery start dual voltage test, boardCmd=0x"
+                 << QString::number(cmd, 16);
+        startDualVoltageQuery(cmd);
+        return;
+    }
+
+    if (isSingleVoltageBoardCmd(cmd)) {
+        qDebug() << "[DEBUG] sendSelectedBoardQuery start single voltage test, boardCmd=0x"
+                 << QString::number(cmd, 16);
+        startSingleVoltageQuery(cmd);
         return;
     }
 
@@ -1707,10 +2069,21 @@ void MainWnd::onSerialFrameReceived(const Protocol::Frame &frame, const QString 
             .arg(Protocol::ProtocolCodec::frameToHex(frame.raw)));
     ui->lb_test_cmd_excute_return_msg->appendPlainText(parsedText);
 
-    if (frame.cmd == Protocol::CmdPrinterCn43Test && m_printerPowerPhase != PrinterPowerPhase::None) {
-        qDebug() << "[DEBUG] [PrinterPower 0x03] onSerialFrameReceived delegate to handlePrinterPowerSerialResponse, phase="
-                 << static_cast<int>(m_printerPowerPhase);
-        handlePrinterPowerSerialResponse(frame, parsedText);
+    if (isDualVoltageBoardCmd(frame.cmd) && m_dualVoltagePhase != DualVoltageTestPhase::None
+        && frame.cmd == m_dualVoltageBoardCmd) {
+        qDebug() << "[DEBUG]" << m_dualVoltageLogTag
+                 << "onSerialFrameReceived delegate to handleDualVoltageSerialResponse, phase="
+                 << static_cast<int>(m_dualVoltagePhase);
+        handleDualVoltageSerialResponse(frame, parsedText);
+        return;
+    }
+
+    if (isSingleVoltageBoardCmd(frame.cmd) && m_singleVoltagePhase != SingleVoltageTestPhase::None
+        && frame.cmd == m_singleVoltageBoardCmd) {
+        qDebug() << "[DEBUG]" << m_singleVoltageLogTag
+                 << "onSerialFrameReceived delegate to handleSingleVoltageSerialResponse, phase="
+                 << static_cast<int>(m_singleVoltagePhase);
+        handleSingleVoltageSerialResponse(frame, parsedText);
         return;
     }
 
@@ -1796,17 +2169,30 @@ void MainWnd::onSerialOperationTimeout()
     const QString failReason = tr("No matching response within %1 ms").arg(m_serial.timeoutMs());
     ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("[TIMEOUT] %1").arg(failReason));
 
-    if (m_printerPowerPhase != PrinterPowerPhase::None) {
-        const QString stepLabel = (m_printerPowerPhase == PrinterPowerPhase::WaitLow)
+    if (m_dualVoltagePhase != DualVoltageTestPhase::None) {
+        const QString stepLabel = (m_dualVoltagePhase == DualVoltageTestPhase::WaitLow)
             ? tr("Read low voltage")
             : tr("Read high voltage");
-        if (!m_printerTestDetailLog.isEmpty())
-            m_printerTestDetailLog += QStringLiteral("\n\n");
-        m_printerTestDetailLog += makeSerialExchangeDetailLog(stepLabel, failReason);
-        qDebug() << "[DEBUG] [PrinterPower 0x03] onSerialOperationTimeout, phase="
-                 << static_cast<int>(m_printerPowerPhase)
+        if (!m_dualVoltageTestDetailLog.isEmpty())
+            m_dualVoltageTestDetailLog += QStringLiteral("\n\n");
+        m_dualVoltageTestDetailLog += makeSerialExchangeDetailLog(stepLabel, failReason);
+        qDebug() << "[DEBUG]" << m_dualVoltageLogTag
+                 << "onSerialOperationTimeout, phase="
+                 << static_cast<int>(m_dualVoltagePhase)
                  << "reason=" << failReason;
-        failPrinterPowerTest(failReason);
+        failDualVoltageTest(failReason);
+        return;
+    }
+
+    if (m_singleVoltagePhase != SingleVoltageTestPhase::None) {
+        if (!m_singleVoltageTestDetailLog.isEmpty())
+            m_singleVoltageTestDetailLog += QStringLiteral("\n\n");
+        m_singleVoltageTestDetailLog += makeSerialExchangeDetailLog(tr("Read high voltage"), failReason);
+        qDebug() << "[DEBUG]" << m_singleVoltageLogTag
+                 << "onSerialOperationTimeout, phase="
+                 << static_cast<int>(m_singleVoltagePhase)
+                 << "reason=" << failReason;
+        failSingleVoltageTest(failReason);
         return;
     }
 
