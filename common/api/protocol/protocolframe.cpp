@@ -1,6 +1,7 @@
 #include "protocolframe.h"
 #include "modbuscrc.h"
 
+#include <QDebug>
 #include <QObject>
 
 namespace Protocol {
@@ -37,9 +38,23 @@ bool ProtocolCodec::tryParseFrame(const QByteArray &buffer, Frame &frame, int &c
 
     int start = 0;
     while (start < buffer.size()) {
+        // 至少要有 addr + sign 才能判断帧头；末尾单字节不能访问 start+1
+        if (start + 1 >= buffer.size()) {
+            qDebug() << "[DEBUG] tryParseFrame: trailing byte, skip scan"
+                     << "start=" << start << "bufferSize=" << buffer.size();
+            break;
+        }
+
         if (static_cast<quint8>(buffer.at(start + 1)) != kSign) {
             ++start;
             continue;
+        }
+
+        // 找到 sign 后还需 len 字段；数据不完整则等待更多字节
+        if (start + 2 >= buffer.size()) {
+            qDebug() << "[DEBUG] tryParseFrame: incomplete frame header, wait for more data"
+                     << "start=" << start << "bufferSize=" << buffer.size();
+            return false;
         }
 
         const quint8 len = static_cast<quint8>(buffer.at(start + 2));
