@@ -134,6 +134,21 @@ protected:
     void proceedOneClickNextQueryOrFinish();
     void finishOneClickTest();
 
+    enum class PrinterPowerPhase {
+        None,
+        WaitLow,
+        WaitHigh,
+    };
+    bool runStm32I2cRelayCommand(quint8 relayArg, QString *output = nullptr);
+    bool startPrinterPowerQuery();
+    bool sendPrinterPowerSerialQuery();
+    void handlePrinterPowerSerialResponse(const Protocol::Frame &frame, const QString &parsedText);
+    void finalizePrinterPowerTest();
+    void failPrinterPowerTest(const QString &reason);
+    void restorePrinterPowerRelayToLow();
+    QString makeSerialExchangeDetailLog(const QString &stepLabel, const QString &parsedContent,
+                                        const QString &rxContent = QString()) const;
+
 protected slots:
 
     void lang_change();
@@ -207,6 +222,15 @@ private:
     bool     m_oneClickTestActive;      // 一键测试流程进行中
     bool     m_oneClickTestAwaitingQuery; // 一键测试等待串口查询回包
     int      m_oneClickQueryIndex;      // 一键测试当前查询指令索引
+
+    PrinterPowerPhase m_printerPowerPhase = PrinterPowerPhase::None;
+    QString m_printerTestDetailLog;
+    QString m_printerLowSummary;
+    QString m_printerHighSummary;
+    bool m_printerLowVoltageOk = false;
+    bool m_printerHighVoltageOk = false;
+    bool m_printerLowReadingValid = false;
+    bool m_printerHighReadingValid = false;
 };
 
 #endif // MAINWND_H

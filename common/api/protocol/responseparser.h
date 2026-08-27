@@ -37,6 +37,7 @@ public:
 
     // 单行摘要，供主界面结果栏展示
     static QString summaryText(const Frame &frame);
+    static QString formatVoltageSummary(const QString &name, const VoltageReading &r);
 
 private:
     static QString parseVersion(const Frame &frame);
@@ -45,7 +46,6 @@ private:
     static QString parseStInputIoText(const Frame &frame);
     static QString faultText(quint8 faultFlag);
     static QString formatVoltageLine(const QString &name, const VoltageReading &r);
-    static QString formatVoltageSummary(const QString &name, const VoltageReading &r);
 };
 
 } // namespace Protocol

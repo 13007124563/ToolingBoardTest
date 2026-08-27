@@ -921,6 +921,18 @@ void MainWnd::proceedOneClickNextQueryOrFinish()
         if (cmd == Protocol::CmdStInputIoTest)
             info.append(static_cast<char>(0x00));
 
+        if (cmd == Protocol::CmdPrinterCn43Test) {
+            if (startPrinterPowerQuery()) {
+                qDebug() << "[DEBUG] [PrinterPower 0x03] one-click startPrinterPowerQuery ok, awaiting response";
+                m_oneClickTestAwaitingQuery = true;
+                return;
+            }
+            qDebug() << "[DEBUG] [PrinterPower 0x03] one-click startPrinterPowerQuery failed, index="
+                     << m_oneClickQueryIndex;
+            ++m_oneClickQueryIndex;
+            continue;
+        }
+
         if (sendBuiltFrame(cmd, info)) {
             m_oneClickTestAwaitingQuery = true;
             return;
@@ -1265,6 +1277,351 @@ bool MainWnd::sendBuiltFrame(quint8 cmd, const QByteArray &info)
     return m_serial.sendFrame(frame, cmd, seq, boardAddr);
 }
 
+bool MainWnd::runStm32I2cRelayCommand(quint8 relayArg, QString *output)
+{
+#ifdef Q_OS_WIN
+    const QString simulated = QStringLiteral("SUCCESS[00]\nTest completed successfully!");
+    if (output)
+        *output = simulated;
+    return true;
+#else
+    QProcess process;
+    process.setWorkingDirectory(QStringLiteral("/etc/zl_test"));
+    process.start(QStringLiteral("/etc/zl_test/stm32_i2c_test"),
+                  QStringList() << QStringLiteral("0x31")
+                                << QStringLiteral("0x%1").arg(relayArg, 0, 16));
+    if (!process.waitForFinished(10000)) {
+        process.kill();
+        qDebug() << "[DEBUG] [PrinterPower 0x03] runStm32I2cRelayCommand timeout, relayArg=0x"
+                 << QString::number(relayArg, 16);
+        return false;
+    }
+
+    const QString out = QString::fromUtf8(process.readAllStandardOutput());
+    const QString err = QString::fromUtf8(process.readAllStandardError());
+    if (output)
+        *output = out + err;
+
+    if (process.exitCode() != 0) {
+        qDebug() << "[DEBUG] [PrinterPower 0x03] runStm32I2cRelayCommand failed, relayArg=0x"
+                 << QString::number(relayArg, 16)
+                 << "exitCode=" << process.exitCode()
+                 << "output=" << (out + err).trimmed();
+        return false;
+    }
+
+    if (!out.contains(QStringLiteral("SUCCESS"))
+        && !out.contains(QStringLiteral("Test completed successfully"))) {
+        qDebug() << "[DEBUG] [PrinterPower 0x03] runStm32I2cRelayCommand missing SUCCESS, relayArg=0x"
+                 << QString::number(relayArg, 16)
+                 << "output=" << (out + err).trimmed();
+        return false;
+    }
+
+    return true;
+#endif
+}
+
+QString MainWnd::makeSerialExchangeDetailLog(const QString &stepLabel, const QString &parsedContent,
+                                               const QString &rxContent) const
+{
+    const QString txTime = m_lastBoardTxTime.isValid()
+        ? m_lastBoardTxTime.toString(QStringLiteral("yyyy-MM-dd HH:mm:ss.zzz"))
+        : QStringLiteral("-");
+    const QString rxTime = QDateTime::currentDateTime().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss.zzz"));
+    const QString txContent = m_lastBoardTxHex.isEmpty() ? QStringLiteral("-") : m_lastBoardTxHex;
+    const QString rxHex = rxContent.isEmpty() ? QStringLiteral("-") : rxContent;
+
+    return tr("[%1]\n"
+              "发送报文时间：%2\n"
+              "发送报文内容：%3\n"
+              "接收报文时间：%4\n"
+              "接收报文内容：%5\n"
+              "接收到的解析内容：%6")
+        .arg(stepLabel,
+             txTime,
+             txContent,
+             rxTime,
+             rxHex,
+             parsedContent.isEmpty() ? QStringLiteral("-") : parsedContent);
+}
+
+bool MainWnd::sendPrinterPowerSerialQuery()
+{
+    m_lastBoardTxHex.clear();
+    m_lastBoardTxTime = QDateTime();
+    return sendBuiltFrame(Protocol::CmdPrinterCn43Test, QByteArray());
+}
+
+void MainWnd::restorePrinterPowerRelayToLow()
+{
+    ui->lb_test_cmd_excute_return_msg->appendPlainText(
+        tr("$ /etc/zl_test/stm32_i2c_test 0x31 0x0"));
+    QString i2cOutput;
+    const bool ok = runStm32I2cRelayCommand(0x0, &i2cOutput);
+    if (!i2cOutput.trimmed().isEmpty())
+        ui->lb_test_cmd_excute_return_msg->appendPlainText(i2cOutput.trimmed());
+
+    if (!m_printerTestDetailLog.isEmpty())
+        m_printerTestDetailLog += QStringLiteral("\n\n");
+    m_printerTestDetailLog += tr("I2C relay restore low command: ./stm32_i2c_test 0x31 0x0");
+    if (!i2cOutput.trimmed().isEmpty())
+        m_printerTestDetailLog += QStringLiteral("\n") + i2cOutput.trimmed();
+    if (!ok) {
+        qDebug() << "[DEBUG] [PrinterPower 0x03] restorePrinterPowerRelayToLow failed";
+        m_printerTestDetailLog += QStringLiteral("\n") + tr("I2C relay restore low command failed");
+    }
+}
+
+void MainWnd::failPrinterPowerTest(const QString &reason)
+{
+    qDebug() << "[DEBUG] [PrinterPower 0x03] failPrinterPowerTest, reason=" << reason
+             << "phase=" << static_cast<int>(m_printerPowerPhase);
+
+    if (QLineEdit *edit = boardTestResultEdit(Protocol::CmdPrinterCn43Test))
+        setLabelFailed(edit);
+
+    if (!m_printerTestDetailLog.isEmpty())
+        m_printerTestDetailLog += QStringLiteral("\n\n");
+    m_printerTestDetailLog += tr("失败原因：%1").arg(reason);
+
+    restorePrinterPowerRelayToLow();
+
+    const QString summary = tr("测试失败");
+    saveSerialTestRecord(Protocol::CmdPrinterCn43Test, summary, m_printerTestDetailLog,
+                         zl::EResultType_State_error);
+
+    m_printerPowerPhase = PrinterPowerPhase::None;
+
+    if (m_oneClickTestAwaitingQuery) {
+        qDebug() << "[DEBUG] [PrinterPower 0x03] failPrinterPowerTest proceed one-click, next index="
+                 << (m_oneClickQueryIndex + 1);
+        ++m_oneClickQueryIndex;
+        proceedOneClickNextQueryOrFinish();
+    }
+}
+
+void MainWnd::finalizePrinterPowerTest()
+{
+    QLineEdit *edit = boardTestResultEdit(Protocol::CmdPrinterCn43Test);
+    if (!edit) {
+        qDebug() << "[WARN] [PrinterPower 0x03] finalizePrinterPowerTest skip: no result edit";
+        m_printerPowerPhase = PrinterPowerPhase::None;
+        if (m_oneClickTestAwaitingQuery) {
+            ++m_oneClickQueryIndex;
+            proceedOneClickNextQueryOrFinish();
+        }
+        return;
+    }
+
+    QString displayText;
+    if (m_printerLowReadingValid)
+        displayText += m_printerLowSummary;
+    else
+        displayText += tr("Low voltage: N/A");
+
+    displayText += QStringLiteral(" | ");
+
+    if (m_printerHighReadingValid)
+        displayText += m_printerHighSummary;
+    else
+        displayText += tr("High voltage: N/A");
+
+    edit->setText(displayText);
+
+    const bool overallOk = m_printerLowReadingValid && m_printerHighReadingValid
+        && m_printerLowVoltageOk && m_printerHighVoltageOk;
+
+    restorePrinterPowerRelayToLow();
+
+    if (overallOk) {
+        qDebug() << "[DEBUG] [PrinterPower 0x03] finalizePrinterPowerTest success:"
+                 << displayText;
+        edit->setStyleSheet("");
+        saveSerialTestRecord(Protocol::CmdPrinterCn43Test, displayText, m_printerTestDetailLog,
+                             zl::EResultType_Success);
+    } else {
+        qDebug() << "[DEBUG] [PrinterPower 0x03] finalizePrinterPowerTest failed:"
+                 << "lowValid=" << m_printerLowReadingValid
+                 << "lowOk=" << m_printerLowVoltageOk
+                 << "highValid=" << m_printerHighReadingValid
+                 << "highOk=" << m_printerHighVoltageOk
+                 << "display=" << displayText;
+        setLabelFailed(edit);
+        if (!m_printerTestDetailLog.isEmpty())
+            m_printerTestDetailLog += QStringLiteral("\n\n");
+        if (!m_printerLowReadingValid || !m_printerLowVoltageOk)
+            m_printerTestDetailLog += tr("Low voltage test failed");
+        if ((!m_printerLowReadingValid || !m_printerLowVoltageOk)
+            && (!m_printerHighReadingValid || !m_printerHighVoltageOk))
+            m_printerTestDetailLog += QStringLiteral(" | ");
+        if (!m_printerHighReadingValid || !m_printerHighVoltageOk)
+            m_printerTestDetailLog += tr("High voltage test failed");
+        saveSerialTestRecord(Protocol::CmdPrinterCn43Test, tr("测试失败"), m_printerTestDetailLog,
+                             zl::EResultType_State_error);
+    }
+
+    m_printerPowerPhase = PrinterPowerPhase::None;
+
+    if (m_oneClickTestAwaitingQuery) {
+        qDebug() << "[DEBUG] [PrinterPower 0x03] finalizePrinterPowerTest proceed one-click, next index="
+                 << (m_oneClickQueryIndex + 1);
+        ++m_oneClickQueryIndex;
+        proceedOneClickNextQueryOrFinish();
+    }
+}
+{
+    const QString rxContent = Protocol::ProtocolCodec::frameToHex(frame.raw);
+
+    if (frame.resp != Protocol::kRespUpOk) {
+        const QString failReason = parsedText.trimmed().isEmpty()
+            ? tr("Response error, resp=0x%1").arg(frame.resp, 2, 16, QChar('0'))
+            : parsedText.trimmed();
+        if (!m_printerTestDetailLog.isEmpty())
+            m_printerTestDetailLog += QStringLiteral("\n\n");
+        const QString stepLabel = (m_printerPowerPhase == PrinterPowerPhase::WaitLow)
+            ? tr("Read low voltage")
+            : tr("Read high voltage");
+        m_printerTestDetailLog += makeSerialExchangeDetailLog(stepLabel, failReason, rxContent);
+        qDebug() << "[DEBUG] [PrinterPower 0x03] handlePrinterPowerSerialResponse resp error, phase="
+                 << static_cast<int>(m_printerPowerPhase)
+                 << "resp=0x" << QString::number(frame.resp, 16)
+                 << "reason=" << failReason;
+        failPrinterPowerTest(failReason);
+        return;
+    }
+
+    Protocol::VoltageReading reading;
+    if (!Protocol::ResponseParser::parseSingleVoltage(frame, reading)) {
+        const QString failReason = tr("Failed to parse voltage data");
+        if (!m_printerTestDetailLog.isEmpty())
+            m_printerTestDetailLog += QStringLiteral("\n\n");
+        const QString stepLabel = (m_printerPowerPhase == PrinterPowerPhase::WaitLow)
+            ? tr("Read low voltage")
+            : tr("Read high voltage");
+        m_printerTestDetailLog += makeSerialExchangeDetailLog(stepLabel, failReason, rxContent);
+        qDebug() << "[DEBUG] [PrinterPower 0x03] handlePrinterPowerSerialResponse parse failed, phase="
+                 << static_cast<int>(m_printerPowerPhase)
+                 << "info=" << Protocol::ProtocolCodec::frameToHex(frame.info);
+        failPrinterPowerTest(failReason);
+        return;
+    }
+
+    const QString parsedContent = parsedText.trimmed().isEmpty()
+        ? Protocol::ResponseParser::formatVoltageSummary(
+              (m_printerPowerPhase == PrinterPowerPhase::WaitLow) ? tr("Low voltage") : tr("High voltage"),
+              reading)
+        : parsedText.trimmed();
+
+    if (m_printerPowerPhase == PrinterPowerPhase::WaitLow) {
+        m_printerLowSummary = Protocol::ResponseParser::formatVoltageSummary(tr("Low voltage"), reading);
+        m_printerLowVoltageOk = reading.isNormal();
+        m_printerLowReadingValid = true;
+
+        if (!m_printerTestDetailLog.isEmpty())
+            m_printerTestDetailLog += QStringLiteral("\n\n");
+        m_printerTestDetailLog += makeSerialExchangeDetailLog(tr("Read low voltage"), parsedContent, rxContent);
+
+        qDebug() << "[DEBUG] [PrinterPower 0x03] low voltage read:"
+                 << m_printerLowSummary
+                 << "ok=" << m_printerLowVoltageOk;
+
+        ui->lb_test_cmd_excute_return_msg->appendPlainText(
+            tr("$ /etc/zl_test/stm32_i2c_test 0x31 0x1"));
+        QString i2cOutput;
+        if (!runStm32I2cRelayCommand(0x1, &i2cOutput)) {
+            if (!i2cOutput.trimmed().isEmpty())
+                ui->lb_test_cmd_excute_return_msg->appendPlainText(i2cOutput.trimmed());
+            if (!m_printerTestDetailLog.isEmpty())
+                m_printerTestDetailLog += QStringLiteral("\n\n");
+            m_printerTestDetailLog += tr("I2C relay high command failed: ./stm32_i2c_test 0x31 0x1");
+            if (!i2cOutput.trimmed().isEmpty())
+                m_printerTestDetailLog += QStringLiteral("\n") + i2cOutput.trimmed();
+            qDebug() << "[DEBUG] [PrinterPower 0x03] I2C relay high command failed after low voltage read";
+            failPrinterPowerTest(tr("I2C relay high command failed"));
+            return;
+        }
+        if (!i2cOutput.trimmed().isEmpty())
+            ui->lb_test_cmd_excute_return_msg->appendPlainText(i2cOutput.trimmed());
+        if (!m_printerTestDetailLog.isEmpty())
+            m_printerTestDetailLog += QStringLiteral("\n\n");
+        m_printerTestDetailLog += tr("I2C relay high command: ./stm32_i2c_test 0x31 0x1");
+        if (!i2cOutput.trimmed().isEmpty())
+            m_printerTestDetailLog += QStringLiteral("\n") + i2cOutput.trimmed();
+
+        m_printerPowerPhase = PrinterPowerPhase::WaitHigh;
+        if (!sendPrinterPowerSerialQuery()) {
+            qDebug() << "[DEBUG] [PrinterPower 0x03] send high voltage query failed after I2C relay high";
+            failPrinterPowerTest(tr("Failed to send high voltage query"));
+        }
+        qDebug() << "[DEBUG] [PrinterPower 0x03] low voltage step done, phase=WaitHigh";
+        return;
+    }
+
+    if (m_printerPowerPhase == PrinterPowerPhase::WaitHigh) {
+        m_printerHighSummary = Protocol::ResponseParser::formatVoltageSummary(tr("High voltage"), reading);
+        m_printerHighVoltageOk = reading.isNormal();
+        m_printerHighReadingValid = true;
+
+        if (!m_printerTestDetailLog.isEmpty())
+            m_printerTestDetailLog += QStringLiteral("\n\n");
+        m_printerTestDetailLog += makeSerialExchangeDetailLog(tr("Read high voltage"), parsedContent, rxContent);
+
+        qDebug() << "[DEBUG] [PrinterPower 0x03] high voltage read ok, finalize test:"
+                 << m_printerHighSummary;
+        finalizePrinterPowerTest();
+        return;
+    }
+
+    qDebug() << "[WARN] [PrinterPower 0x03] handlePrinterPowerSerialResponse unexpected phase="
+             << static_cast<int>(m_printerPowerPhase);
+}
+
+bool MainWnd::startPrinterPowerQuery()
+{
+    qDebug() << "[DEBUG] [PrinterPower 0x03] startPrinterPowerQuery begin";
+
+    m_printerPowerPhase = PrinterPowerPhase::None;
+    m_printerTestDetailLog.clear();
+    m_printerLowSummary.clear();
+    m_printerHighSummary.clear();
+    m_printerLowVoltageOk = false;
+    m_printerHighVoltageOk = false;
+    m_printerLowReadingValid = false;
+    m_printerHighReadingValid = false;
+
+    m_lastBoardQueryCmd = Protocol::CmdPrinterCn43Test;
+    clearBoardTestResultField(Protocol::CmdPrinterCn43Test);
+
+    ui->lb_test_cmd_excute_return_msg->appendPlainText(
+        tr("$ /etc/zl_test/stm32_i2c_test 0x31 0x0"));
+    QString i2cOutput;
+    if (!runStm32I2cRelayCommand(0x0, &i2cOutput)) {
+        if (!i2cOutput.trimmed().isEmpty())
+            ui->lb_test_cmd_excute_return_msg->appendPlainText(i2cOutput.trimmed());
+        m_printerTestDetailLog = tr("I2C relay low command failed: ./stm32_i2c_test 0x31 0x0");
+        if (!i2cOutput.trimmed().isEmpty())
+            m_printerTestDetailLog += QStringLiteral("\n") + i2cOutput.trimmed();
+        qDebug() << "[DEBUG] [PrinterPower 0x03] startPrinterPowerQuery I2C relay low command failed";
+        failPrinterPowerTest(tr("I2C relay low command failed"));
+        return false;
+    }
+    if (!i2cOutput.trimmed().isEmpty())
+        ui->lb_test_cmd_excute_return_msg->appendPlainText(i2cOutput.trimmed());
+    m_printerTestDetailLog = tr("I2C relay low command: ./stm32_i2c_test 0x31 0x0");
+    if (!i2cOutput.trimmed().isEmpty())
+        m_printerTestDetailLog += QStringLiteral("\n") + i2cOutput.trimmed();
+
+    m_printerPowerPhase = PrinterPowerPhase::WaitLow;
+    if (!sendPrinterPowerSerialQuery()) {
+        qDebug() << "[DEBUG] [PrinterPower 0x03] startPrinterPowerQuery send low voltage query failed";
+        failPrinterPowerTest(tr("Failed to send low voltage query"));
+        return false;
+    }
+    qDebug() << "[DEBUG] [PrinterPower 0x03] startPrinterPowerQuery ok, phase=WaitLow";
+    return true;
+}
+
 void MainWnd::sendSelectedBoardQuery()
 {
     const QVariant cmdVar = ui->cb_board_cmd->currentData();
@@ -1280,6 +1637,12 @@ void MainWnd::sendSelectedBoardQuery()
     m_lastBoardTxTime = QDateTime();
 
     clearBoardTestResultField(cmd);
+
+    if (cmd == Protocol::CmdPrinterCn43Test) {
+        qDebug() << "[DEBUG] [PrinterPower 0x03] sendSelectedBoardQuery start printer power test";
+        startPrinterPowerQuery();
+        return;
+    }
 
     QByteArray info;
     // 3.7 ST_INPUT IO：下行 INFO 为输出电平（00 低 / 01 高），默认低电平与协议文档示例一致
@@ -1343,6 +1706,13 @@ void MainWnd::onSerialFrameReceived(const Protocol::Frame &frame, const QString 
             .arg(frame.cmd, 2, 16, QChar('0'))
             .arg(Protocol::ProtocolCodec::frameToHex(frame.raw)));
     ui->lb_test_cmd_excute_return_msg->appendPlainText(parsedText);
+
+    if (frame.cmd == Protocol::CmdPrinterCn43Test && m_printerPowerPhase != PrinterPowerPhase::None) {
+        qDebug() << "[DEBUG] [PrinterPower 0x03] onSerialFrameReceived delegate to handlePrinterPowerSerialResponse, phase="
+                 << static_cast<int>(m_printerPowerPhase);
+        handlePrinterPowerSerialResponse(frame, parsedText);
+        return;
+    }
 
     updateBoardTestResultUi(frame);
 
@@ -1425,6 +1795,20 @@ void MainWnd::onSerialOperationTimeout()
 {
     const QString failReason = tr("No matching response within %1 ms").arg(m_serial.timeoutMs());
     ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("[TIMEOUT] %1").arg(failReason));
+
+    if (m_printerPowerPhase != PrinterPowerPhase::None) {
+        const QString stepLabel = (m_printerPowerPhase == PrinterPowerPhase::WaitLow)
+            ? tr("Read low voltage")
+            : tr("Read high voltage");
+        if (!m_printerTestDetailLog.isEmpty())
+            m_printerTestDetailLog += QStringLiteral("\n\n");
+        m_printerTestDetailLog += makeSerialExchangeDetailLog(stepLabel, failReason);
+        qDebug() << "[DEBUG] [PrinterPower 0x03] onSerialOperationTimeout, phase="
+                 << static_cast<int>(m_printerPowerPhase)
+                 << "reason=" << failReason;
+        failPrinterPowerTest(failReason);
+        return;
+    }
 
     if (QLineEdit *edit = boardTestResultEdit(m_lastBoardQueryCmd)) {
         if (edit->text().isEmpty())

@@ -937,6 +937,62 @@
         <translation>未选择查询指令</translation>
     </message>
     <message>
+        <source>Low voltage</source>
+        <translation>低电压</translation>
+    </message>
+    <message>
+        <source>High voltage</source>
+        <translation>高电压</translation>
+    </message>
+    <message>
+        <source>Low voltage: N/A</source>
+        <translation>低电压: 无数据</translation>
+    </message>
+    <message>
+        <source>High voltage: N/A</source>
+        <translation>高电压: 无数据</translation>
+    </message>
+    <message>
+        <source>Read low voltage</source>
+        <translation>读取低电压</translation>
+    </message>
+    <message>
+        <source>Read high voltage</source>
+        <translation>读取高电压</translation>
+    </message>
+    <message>
+        <source>I2C relay low command failed</source>
+        <translation>I2C继电器低电平命令失败</translation>
+    </message>
+    <message>
+        <source>I2C relay high command failed</source>
+        <translation>I2C继电器高电平命令失败</translation>
+    </message>
+    <message>
+        <source>Failed to send low voltage query</source>
+        <translation>发送低电压查询失败</translation>
+    </message>
+    <message>
+        <source>Failed to send high voltage query</source>
+        <translation>发送高电压查询失败</translation>
+    </message>
+    <message>
+        <source>Failed to parse voltage data</source>
+        <translation>解析电压数据失败</translation>
+    </message>
+    <message>
+        <source>Low voltage test failed</source>
+        <translation>低电压测试失败</translation>
+    </message>
+    <message>
+        <source>High voltage test failed</source>
+        <translation>高电压测试失败</translation>
+    </message>
+    <message>
+        <source>I2C relay restore low command failed</source>
+        <translation>I2C继电器恢复低电平命令失败</translation>
+    </message>
+    <message>
         <source>Please open serial port first</source>
         <translation>请先打开串口</translation>
     </message>
