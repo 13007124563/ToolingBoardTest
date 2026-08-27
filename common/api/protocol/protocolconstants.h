@@ -27,6 +27,15 @@ enum Command : quint8 {
     CmdStInputIoTest     = 0x07,  // ST_INPUT1/2 IO (CN45/CN13)
 };
 
+// V1.1：0x03–0x06 下行 INFO 读电平选择
+static const quint8 kReadVoltageLow  = 0x00;
+static const quint8 kReadVoltageHigh = 0x01;
+
+inline bool commandUsesReadLevelInfo(quint8 cmd)
+{
+    return cmd >= CmdPrinterCn43Test && cmd <= CmdProximityCn13Test;
+}
+
 inline quint8 makeAddress(quint8 boardAddr)
 {
     return static_cast<quint8>(boardAddr & 0x7F);

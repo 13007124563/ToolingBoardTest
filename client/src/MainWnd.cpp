@@ -1405,9 +1405,20 @@ QString MainWnd::makeSerialExchangeDetailLog(const QString &stepLabel, const QSt
 
 bool MainWnd::sendDualVoltageSerialQuery()
 {
+    quint8 readLevel = 0;
+    if (m_dualVoltagePhase == DualVoltageTestPhase::WaitLow)
+        readLevel = Protocol::kReadVoltageLow;
+    else if (m_dualVoltagePhase == DualVoltageTestPhase::WaitHigh)
+        readLevel = Protocol::kReadVoltageHigh;
+    else
+        return false;
+
+    QByteArray info;
+    info.append(static_cast<char>(readLevel));
+
     m_lastBoardTxHex.clear();
     m_lastBoardTxTime = QDateTime();
-    return sendBuiltFrame(m_dualVoltageBoardCmd, QByteArray());
+    return sendBuiltFrame(m_dualVoltageBoardCmd, info);
 }
 
 void MainWnd::restoreDualVoltageRelayToLow()
@@ -1780,9 +1791,12 @@ bool MainWnd::runStm32I2cSingleCommand(quint8 i2cCmd, QString *output)
 
 bool MainWnd::sendSingleVoltageSerialQuery()
 {
+    QByteArray info;
+    info.append(static_cast<char>(Protocol::kReadVoltageHigh));
+
     m_lastBoardTxHex.clear();
     m_lastBoardTxTime = QDateTime();
-    return sendBuiltFrame(m_singleVoltageBoardCmd, QByteArray());
+    return sendBuiltFrame(m_singleVoltageBoardCmd, info);
 }
 
 void MainWnd::failSingleVoltageTest(const QString &reason)
