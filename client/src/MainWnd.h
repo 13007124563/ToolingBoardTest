@@ -129,6 +129,11 @@ protected:
     void setLabelFailed(QLabel* label);              // 设置 QLabel 为失败样式
     void setLabelFailed(QLineEdit* edit);            // 重载：设置 QLineEdit 为失败样式
 
+    void proceedOneClickAfterIot();
+    void startOneClickBoardQueries();
+    void proceedOneClickNextQueryOrFinish();
+    void finishOneClickTest();
+
 protected slots:
 
     void lang_change();
@@ -139,6 +144,8 @@ protected slots:
     void onScriptReadyRead();
     void onLogMonitorTimeout();
 
+
+    void on_btn_nor_one_click_test_clicked();
 
     void on_btn_nor_version_clicked();
 
@@ -197,6 +204,9 @@ private:
     QLabel*  m_spinTextLabel;            // 旋转文字（双语更新）
     QTimer*  m_spinTimer;               // 旋转定时器
     int      m_spinAngle;               // 当前旋转角度
+    bool     m_oneClickTestActive;      // 一键测试流程进行中
+    bool     m_oneClickTestAwaitingQuery; // 一键测试等待串口查询回包
+    int      m_oneClickQueryIndex;      // 一键测试当前查询指令索引
 };
 
 #endif // MAINWND_H

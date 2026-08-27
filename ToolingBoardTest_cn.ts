@@ -853,6 +853,10 @@
         <translation>镜像版本</translation>
     </message>
     <message>
+        <source>One-Click Test</source>
+        <translation>一键测试</translation>
+    </message>
+    <message>
         <source>IOT Test</source>
         <translation>IOT测试</translation>
     </message>

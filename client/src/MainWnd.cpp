@@ -72,8 +72,10 @@ MainWnd::MainWnd(QWidget *parent) :
   , m_spinTextLabel(nullptr)
   , m_spinTimer(nullptr)
   , m_spinAngle(0)
+  , m_oneClickTestActive(false)
+  , m_oneClickTestAwaitingQuery(false)
+  , m_oneClickQueryIndex(-1)
 {
-
     ui->setupUi(this);
 
     // 下拉框禁用滚轮切换选项，仅支持点击选择
@@ -764,20 +766,20 @@ void MainWnd::on_btn_nor_version_clicked()
     resetVersionInfo();
     resetCmdResultInfo();
 
-    // 禁用输入框和改变按钮颜色
-    setInputsEnabled(false);
-    setButtonExecuting(ui->btn_nor_version, true);
-
-    // 记录当前执行的按钮
-    m_currentExecutingButton = ui->btn_nor_version;
+    if (!m_oneClickTestActive) {
+        setInputsEnabled(false);
+        setButtonExecuting(ui->btn_nor_version, true);
+        m_currentExecutingButton = ui->btn_nor_version;
+    }
 
 #ifdef Q_OS_WIN
-    // Windows测试模式：显示模拟数据
     ui->lb_test_version->setText("1.0.0-test");
     MsgWnd::ShowNormalInfo(tr("Windows test mode: Version query simulated"));
-    setInputsEnabled(true);
-    setButtonExecuting(ui->btn_nor_version, false);
-    m_currentExecutingButton = nullptr;
+    if (!m_oneClickTestActive) {
+        setInputsEnabled(true);
+        setButtonExecuting(ui->btn_nor_version, false);
+        m_currentExecutingButton = nullptr;
+    }
 #else
     ui->lb_test_cmd_excute_return_msg->appendPlainText("$ cat /etc/sw-version");
 
@@ -800,9 +802,11 @@ void MainWnd::on_btn_nor_version_clicked()
             qDebug() << "[ERROR] Failed to read /etc/sw-version, stderr:" << err;
             MsgWnd::ShowNormalInfo(tr("Failed to query image version"));
 
-            setInputsEnabled(true);
-            setButtonExecuting(ui->btn_nor_version, false);
-            m_currentExecutingButton = nullptr;
+            if (!m_oneClickTestActive) {
+                setInputsEnabled(true);
+                setButtonExecuting(ui->btn_nor_version, false);
+                m_currentExecutingButton = nullptr;
+            }
             return;
         }
     }
@@ -815,18 +819,15 @@ void MainWnd::on_btn_nor_version_clicked()
     }
 
     QString version = "unknown";
-    
-    // 添加调试信息
+
     qDebug() << "[DEBUG] Raw output:" << output;
-    
-    // 直接查找以 V 开头的版本号（如 V1.0.1.260210）
+
     QRegularExpression re("(V[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)", QRegularExpression::CaseInsensitiveOption);
     QRegularExpressionMatch match = re.match(output);
     if (match.hasMatch()) {
         version = match.captured(1);
         qDebug() << "[INFO] Version matched:" << version;
     } else {
-        // 备用：查找 V 后跟任意非空白字符
         QRegularExpression re2("(V[^\\s\\n\\r]+)", QRegularExpression::CaseInsensitiveOption);
         QRegularExpressionMatch match2 = re2.match(output);
         if (match2.hasMatch()) {
@@ -837,16 +838,112 @@ void MainWnd::on_btn_nor_version_clicked()
         }
     }
 
-    // 直接设置版本号到输入框（清除样式确保可见）
     ui->lb_test_version->setStyleSheet("");
     ui->lb_test_version->setText(version);
-    ui->lb_test_version->update();  // 强制刷新控件
+    ui->lb_test_version->update();
     qDebug() << "[INFO] Final version displayed in widget:" << version;
 
-    setInputsEnabled(true);
-    setButtonExecuting(ui->btn_nor_version, false);
-    m_currentExecutingButton = nullptr;
+    if (!m_oneClickTestActive) {
+        setInputsEnabled(true);
+        setButtonExecuting(ui->btn_nor_version, false);
+        m_currentExecutingButton = nullptr;
+    }
 #endif
+}
+
+void MainWnd::on_btn_nor_one_click_test_clicked()
+{
+    if (m_oneClickTestActive)
+        return;
+
+    if (!m_serial.isOpen()) {
+        const QString msg = tr("Please open serial port first");
+        MsgWnd::ShowNormalInfo(msg);
+        ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("[ERROR] %1").arg(msg));
+        return;
+    }
+
+    m_oneClickTestActive = true;
+    m_oneClickTestAwaitingQuery = false;
+    m_oneClickQueryIndex = -1;
+    setInputsEnabled(false);
+    setButtonExecuting(ui->btn_nor_one_click_test, true);
+    m_currentExecutingButton = ui->btn_nor_one_click_test;
+
+    on_btn_nor_version_clicked();
+    on_btn_nor_all_test_clicked();
+}
+
+void MainWnd::proceedOneClickAfterIot()
+{
+    if (!m_oneClickTestActive)
+        return;
+
+    ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("[One-Click Test] Step 3/3: Send Query"));
+
+    if (!m_serial.isOpen()) {
+        const QString msg = tr("Please open serial port first");
+        ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("[ERROR] %1").arg(msg));
+        finishOneClickTest();
+        return;
+    }
+
+    if (ui->cb_board_cmd->count() <= 0) {
+        finishOneClickTest();
+        return;
+    }
+
+    startOneClickBoardQueries();
+}
+
+void MainWnd::startOneClickBoardQueries()
+{
+    m_oneClickQueryIndex = 0;
+    proceedOneClickNextQueryOrFinish();
+}
+
+void MainWnd::proceedOneClickNextQueryOrFinish()
+{
+    if (!m_oneClickTestActive)
+        return;
+
+    m_oneClickTestAwaitingQuery = false;
+
+    while (m_oneClickQueryIndex < ui->cb_board_cmd->count()) {
+        ui->cb_board_cmd->setCurrentIndex(m_oneClickQueryIndex);
+        const quint8 cmd = static_cast<quint8>(ui->cb_board_cmd->currentData().toUInt());
+        m_lastBoardQueryCmd = cmd;
+        m_lastBoardTxHex.clear();
+        m_lastBoardTxTime = QDateTime();
+        clearBoardTestResultField(cmd);
+
+        QByteArray info;
+        if (cmd == Protocol::CmdStInputIoTest)
+            info.append(static_cast<char>(0x00));
+
+        if (sendBuiltFrame(cmd, info)) {
+            m_oneClickTestAwaitingQuery = true;
+            return;
+        }
+
+        ++m_oneClickQueryIndex;
+    }
+
+    finishOneClickTest();
+}
+
+void MainWnd::finishOneClickTest()
+{
+    if (!m_oneClickTestActive && !m_oneClickTestAwaitingQuery)
+        return;
+
+    m_oneClickTestActive = false;
+    m_oneClickTestAwaitingQuery = false;
+    m_oneClickQueryIndex = -1;
+    setInputsEnabled(true);
+    setButtonExecuting(ui->btn_nor_one_click_test, false);
+    if (m_currentExecutingButton == ui->btn_nor_one_click_test)
+        m_currentExecutingButton = nullptr;
 }
 
 void MainWnd::on_btn_nor_sim_test_clicked()
@@ -861,61 +958,55 @@ void MainWnd::on_btn_nor_iot_test_clicked()
 
 void MainWnd::on_btn_nor_all_test_clicked()
 {
-    // 获取模块类型
     QString moduleName = ui->cb_module_type->currentData().toString();
     QString displayName = ui->cb_module_type->currentText();
     
     qDebug() << "[DEBUG] Module selection - Display:" << displayName << ", Data:" << moduleName;
 
-    // 双语提示辅助：根据当前语言返回中/英文字符串
     auto bilingual = [](const QString& cn, const QString& en) -> QString {
         return (APPMODEL()->CabinetLanguage() == zl::ELanguageType_Cn) ? cn : en;
     };
 
-    // 检查模块类型是否已选择
     if (moduleName.isEmpty()) {
         MsgWnd::ShowNormalInfo(bilingual("请先选择模块类型", "Please select module type first"));
+        if (m_oneClickTestActive) finishOneClickTest();
         return;
     }
 
-    // 获取APN和NET输入
     QString apn = ui->le_apn->currentText().trimmed();
     QString net = ui->le_net->currentText().trimmed();
 
-    // 验证APN输入
     if (apn.isEmpty()) {
         MsgWnd::ShowNormalInfo(bilingual("请先输入 APN", "Please input APN first"));
+        if (m_oneClickTestActive) finishOneClickTest();
         return;
     }
 
-    // 验证APN格式（字母数字下划线点短横线，1-64位）
     QRegularExpression apnRegex("^[A-Za-z0-9_.-]{1,64}$");
     if (!apnRegex.match(apn).hasMatch()) {
         MsgWnd::ShowNormalInfo(bilingual(
             "APN 格式无效，仅支持字母/数字/下划线/点/短横线（1-64位）",
             "Invalid APN format. Use only letters, numbers, underscore, dot, hyphen (1-64 chars)"));
+        if (m_oneClickTestActive) finishOneClickTest();
         return;
     }
 
-    // 验证NET输入
     if (net.isEmpty()) {
         MsgWnd::ShowNormalInfo(bilingual("请先输入 NET 测试地址", "Please input NET host first"));
+        if (m_oneClickTestActive) finishOneClickTest();
         return;
     }
 
-    // 验证NET格式（域名或IP地址）
     QRegularExpression domainRegex("^([A-Za-z0-9]([A-Za-z0-9-]{0,61}[A-Za-z0-9])?\\.)+[A-Za-z]{2,}$");
     QRegularExpression ipRegex("^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)\\.?\\b){4}$");
     if (!domainRegex.match(net).hasMatch() && !ipRegex.match(net).hasMatch()) {
         MsgWnd::ShowNormalInfo(bilingual(
             "NET 格式无效，请输入域名（如 www.baidu.com）或 IP 地址（如 8.8.8.8）",
             "Invalid NET format. Use domain name (e.g. www.baidu.com) or IP (e.g. 8.8.8.8)"));
+        if (m_oneClickTestActive) finishOneClickTest();
         return;
     }
 
-    // ============ 重要：终止旧测试脚本（如果还在运行） ============
-    // 场景：上一次测试已完成（已自动保存），但脚本还在监控阶段运行
-    // 用户立即点击新测试时，需要先终止旧脚本
     if (m_scriptProcess && m_scriptProcess->state() == QProcess::Running) {
         if (m_testCompleted) {
             qDebug() << "[INFO] Previous test already completed and saved, terminating monitoring script...";
@@ -923,18 +1014,15 @@ void MainWnd::on_btn_nor_all_test_clicked()
             qDebug() << "[WARN] Previous test not completed, terminating incomplete test script...";
         }
 
-        // 停止前先同步一次当前日志，确保“查看报告”能看到截至当前时刻的内容
         monitorLogFile();
         if (m_testCompleted) {
             updateTestLogToDatabase(false, true);
         }
         
-        // 终止旧脚本
         m_isManuallyTerminating = true;
         m_scriptProcess->kill();
         m_scriptProcess->waitForFinished(2000);
 
-        // 再补读一次终止瞬间的新日志，并落库（日志截至到这里）
         monitorLogFile();
         if (m_testCompleted) {
             updateTestLogToDatabase(false, true);
@@ -952,31 +1040,30 @@ void MainWnd::on_btn_nor_all_test_clicked()
     resetIotInfo();
     resetCmdResultInfo();
 
-    // 初始化测试记录
     TestRecordManager::getInstance()->GetEmptyRecord(record_);
     record_.module_type = moduleName;
-    record_.simiot_test = 1;  // 标记为一键测试
-    record_.result_type = zl::EResultType_Success;  // 默认成功，如果失败会更新
+    record_.simiot_test = 1;
+    record_.result_type = zl::EResultType_Success;
 
-    // 禁用输入框和改变按钮颜色
     setInputsEnabled(false);
-    setButtonExecuting(ui->btn_nor_all_test, true);
-
-    // 记录当前执行的按钮
-    m_currentExecutingButton = ui->btn_nor_all_test;
+    QPushButton *activeBtn = m_oneClickTestActive ? ui->btn_nor_one_click_test : ui->btn_nor_all_test;
+    setButtonExecuting(activeBtn, true);
+    m_currentExecutingButton = activeBtn;
     m_testCompleted = false;
 
-    // 2分钟后自动恢复（仅在测试未完成时生效）
-    // 注意：如果用户选择了错误的模块类型，会导致乱码和无限等待，超时保护机制能避免界面卡死
     if (!m_timeoutTimer) {
         m_timeoutTimer = new QTimer(this);
         m_timeoutTimer->setSingleShot(true);
         connect(m_timeoutTimer, &QTimer::timeout, [this]() {
-            if (m_currentExecutingButton == ui->btn_nor_all_test && !m_testCompleted) {
+            if ((m_currentExecutingButton == ui->btn_nor_all_test || m_oneClickTestActive) && !m_testCompleted) {
                 qDebug() << "[TIMEOUT] Test timeout (possibly wrong module type selected), restoring UI...";
                 setInputsEnabled(true);
-                setButtonExecuting(ui->btn_nor_all_test, false);
-                m_currentExecutingButton = nullptr;
+                if (m_oneClickTestActive) {
+                    finishOneClickTest();
+                } else {
+                    setButtonExecuting(ui->btn_nor_all_test, false);
+                    m_currentExecutingButton = nullptr;
+                }
                 showTestingOverlay(false);
                 
                 ui->lb_test_cmd_excute_return_msg->appendPlainText("\n========================================");
@@ -990,7 +1077,6 @@ void MainWnd::on_btn_nor_all_test_clicked()
                 
                 MsgWnd::ShowNormalInfo(tr("Test timeout! Please check if the module type is correct."));
                 
-                // 终止脚本进程
                 if (m_scriptProcess && m_scriptProcess->state() == QProcess::Running) {
                     m_isManuallyTerminating = true;
                     m_scriptProcess->kill();
@@ -1003,17 +1089,15 @@ void MainWnd::on_btn_nor_all_test_clicked()
             }
         });
     }
-    m_timeoutTimer->start(300000);  // 5分钟超时，避免错误模块类型导致长时间卡死
+    m_timeoutTimer->start(300000);
 
     resetRecord();
     
-    // 清空之前保存的记录ID，准备新测试
     m_savedSimRecordId.clear();
     m_savedIotRecordId.clear();
     m_lastSavedLogSize = 0;
     m_lastLogSyncTimestampMs = 0;
 
-    // 调用IOT脚本执行测试
     executeIotScript(moduleName, apn, net);
 }
 
@@ -1265,6 +1349,10 @@ void MainWnd::onSerialFrameReceived(const Protocol::Frame &frame, const QString 
     if (!boardTestResultEdit(frame.cmd)) {
         qDebug() << "[WARN] onSerialFrameReceived skip save: no result edit for cmd=0x"
                  << QString::number(frame.cmd, 16).toUpper();
+        if (m_oneClickTestAwaitingQuery) {
+            ++m_oneClickQueryIndex;
+            proceedOneClickNextQueryOrFinish();
+        }
         return;
     }
 
@@ -1280,6 +1368,10 @@ void MainWnd::onSerialFrameReceived(const Protocol::Frame &frame, const QString 
         if (summary.isEmpty()) {
             qDebug() << "[WARN] onSerialFrameReceived skip save: empty summary, cmd=0x"
                      << QString::number(frame.cmd, 16).toUpper();
+            if (m_oneClickTestAwaitingQuery) {
+                ++m_oneClickQueryIndex;
+                proceedOneClickNextQueryOrFinish();
+            }
             return;
         }
         const QString parsedContent = parsedText.trimmed().isEmpty() ? summary : parsedText.trimmed();
@@ -1290,6 +1382,10 @@ void MainWnd::onSerialFrameReceived(const Protocol::Frame &frame, const QString 
                                      "接收到的解析内容：%5")
                                       .arg(txTime, txContent, rxTime, rxContent, parsedContent);
         saveSerialTestRecord(frame.cmd, summary, detailLog, zl::EResultType_Success);
+        if (m_oneClickTestAwaitingQuery) {
+            ++m_oneClickQueryIndex;
+            proceedOneClickNextQueryOrFinish();
+        }
         return;
     }
 
@@ -1308,6 +1404,10 @@ void MainWnd::onSerialFrameReceived(const Protocol::Frame &frame, const QString 
                                  "失败原因：%5")
                                   .arg(txTime, txContent, rxTime, rxContent, failReason);
     saveSerialTestRecord(frame.cmd, tr("测试失败"), detailLog, zl::EResultType_State_error);
+    if (m_oneClickTestAwaitingQuery) {
+        ++m_oneClickQueryIndex;
+        proceedOneClickNextQueryOrFinish();
+    }
 }
 
 void MainWnd::onSerialPassiveFrameReceived(const Protocol::Frame &frame, const QString &reason)
@@ -1334,6 +1434,10 @@ void MainWnd::onSerialOperationTimeout()
     if (!boardTestResultEdit(m_lastBoardQueryCmd)) {
         qDebug() << "[WARN] onSerialOperationTimeout skip save: no result edit for cmd=0x"
                  << QString::number(m_lastBoardQueryCmd, 16).toUpper();
+        if (m_oneClickTestAwaitingQuery) {
+            ++m_oneClickQueryIndex;
+            proceedOneClickNextQueryOrFinish();
+        }
         return;
     }
 
@@ -1349,6 +1453,10 @@ void MainWnd::onSerialOperationTimeout()
                                  "失败原因：%3")
                                   .arg(txTime, txContent, failReason);
     saveSerialTestRecord(m_lastBoardQueryCmd, tr("测试失败"), detailLog, zl::EResultType_State_error);
+    if (m_oneClickTestAwaitingQuery) {
+        ++m_oneClickQueryIndex;
+        proceedOneClickNextQueryOrFinish();
+    }
 }
 
 void MainWnd::auto_save_record()
@@ -1402,6 +1510,7 @@ void MainWnd::setInputsEnabled(bool enabled)
     ui->btn_nor_open_port->setEnabled(enabled);
     ui->cb_board_cmd->setEnabled(enabled);
     ui->btn_query_board_version->setEnabled(enabled && m_serial.isOpen());
+    ui->btn_nor_one_click_test->setEnabled(enabled && !m_oneClickTestActive);
 
     // 强制刷新界面
     ui->cb_module_type->update();
@@ -1457,9 +1566,13 @@ void MainWnd::executeIotScript(const QString& moduleName, const QString& apn, co
     if (!QFile::exists(m_scriptPath)) {
         qDebug() << "[ERROR] Script file not found:" << m_scriptPath;
         MsgWnd::ShowNormalInfo(tr("Script file not found: %1").arg(m_scriptPath));
-        setInputsEnabled(true);
-        setButtonExecuting(m_currentExecutingButton, false);
-        m_currentExecutingButton = nullptr;
+        if (m_oneClickTestActive)
+            finishOneClickTest();
+        else {
+            setInputsEnabled(true);
+            setButtonExecuting(m_currentExecutingButton, false);
+            m_currentExecutingButton = nullptr;
+        }
         return;
     }
 #else
@@ -1540,9 +1653,13 @@ void MainWnd::executeIotScript(const QString& moduleName, const QString& apn, co
         ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("Failed to start script: %1").arg(m_scriptProcess->errorString()));
         MsgWnd::ShowNormalInfo(tr("Failed to start IOT test script"));
         
-        setInputsEnabled(true);
-        setButtonExecuting(m_currentExecutingButton, false);
-        m_currentExecutingButton = nullptr;
+        if (m_oneClickTestActive) {
+            finishOneClickTest();
+        } else {
+            setInputsEnabled(true);
+            setButtonExecuting(m_currentExecutingButton, false);
+            m_currentExecutingButton = nullptr;
+        }
         return;
     }
 
@@ -1639,9 +1756,14 @@ void MainWnd::onScriptFinished(int exitCode, int exitStatus)
 
     // 恢复按钮状态
     if (m_currentExecutingButton != nullptr) {
-        setInputsEnabled(true);
-        setButtonExecuting(m_currentExecutingButton, false);
-        m_currentExecutingButton = nullptr;
+        if (m_oneClickTestActive) {
+            if (!m_testCompleted)
+                finishOneClickTest();
+        } else {
+            setInputsEnabled(true);
+            setButtonExecuting(m_currentExecutingButton, false);
+            m_currentExecutingButton = nullptr;
+        }
     }
 
     // 确保进程状态被清理，允许下次执行
@@ -2414,10 +2536,14 @@ void MainWnd::checkTestCompletion(const QString& output)
             // 隐藏测试执行中遮罩
             showTestingOverlay(false);
             
-            // 恢复界面状态，但不终止脚本
-            setInputsEnabled(true);
-            setButtonExecuting(ui->btn_nor_all_test, false);
-            m_currentExecutingButton = nullptr;
+            if (m_oneClickTestActive) {
+                proceedOneClickAfterIot();
+            } else {
+                // 恢复界面状态，但不终止脚本
+                setInputsEnabled(true);
+                setButtonExecuting(ui->btn_nor_all_test, false);
+                m_currentExecutingButton = nullptr;
+            }
         }
     }
 }

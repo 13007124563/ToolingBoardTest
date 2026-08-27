@@ -65,6 +65,16 @@ QPushButton
 	color:#FFFFFF;
 }
 
+/* 紫色按钮 - 一键测试 */
+QPushButton[objectName=&quot;btn_nor_one_click_test&quot;]
+{
+	background-color: #7B1FA2;
+}
+QPushButton[objectName=&quot;btn_nor_one_click_test&quot;]:pressed
+{
+	background-color: #6A1B9A;
+}
+
 /* 橙色按钮 - 镜像版本 */
 QPushButton[objectName=&quot;btn_nor_version&quot;]
 {
@@ -378,6 +388,7 @@ QComboBox::down-arrow {
              </spacer>
          </item>
          
+         <item><widget class="QPushButton" name="btn_nor_one_click_test"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>One-Click Test</string></property></widget></item>
          <item><widget class="QPushButton" name="btn_nor_version"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Image Version</string></property></widget></item>
          <item><widget class="QPushButton" name="btn_nor_all_test"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>IOT Test</string></property></widget></item>
          
