@@ -856,12 +856,8 @@ void MainWnd::on_btn_nor_one_click_test_clicked()
     if (m_oneClickTestActive)
         return;
 
-    if (!m_serial.isOpen()) {
-        const QString msg = tr("Please open serial port first");
-        MsgWnd::ShowNormalInfo(msg);
-        ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("[ERROR] %1").arg(msg));
+    if (!ensureSerialPortOpen())
         return;
-    }
 
     m_oneClickTestActive = true;
     m_oneClickTestAwaitingQuery = false;
@@ -881,9 +877,7 @@ void MainWnd::proceedOneClickAfterIot()
 
     ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("[One-Click Test] Step 3/3: Send Query"));
 
-    if (!m_serial.isOpen()) {
-        const QString msg = tr("Please open serial port first");
-        ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("[ERROR] %1").arg(msg));
+    if (!ensureSerialPortOpen()) {
         finishOneClickTest();
         return;
     }
@@ -1225,11 +1219,9 @@ void MainWnd::refreshSerialPorts()
 
 void MainWnd::updateOpenPortButton()
 {
-    const bool opened = m_serial.isOpen();
-    ui->btn_nor_open_port->setText(opened ? tr("Close Serial Port") : tr("Open Serial Port"));
-    ui->cb_serial_port->setEnabled(!opened);
-    ui->cb_baudrate->setEnabled(!opened);
-    ui->btn_query_board_version->setEnabled(opened);
+    // 串口在发送查询 / 一键测试时按需打开，发送按钮不再依赖手动开串口
+    if (!m_oneClickTestActive)
+        ui->btn_query_board_version->setEnabled(true);
 }
 
 bool MainWnd::openSelectedSerialPort()
@@ -1266,6 +1258,31 @@ bool MainWnd::openSelectedSerialPort()
     APPMODEL()->SaveAppConfiguration();
 
     return true;
+}
+
+bool MainWnd::ensureSerialPortOpen()
+{
+    const QString port = ui->cb_serial_port->currentData().toString().trimmed();
+    const QString baudText = ui->cb_baudrate->currentData().toString().trimmed();
+    bool ok = false;
+    const int baud = baudText.toInt(&ok);
+
+    // 仅当已打开且端口/波特率与当前选择一致时复用，避免切换下拉框后仍走旧串口
+    if (m_serial.isOpen() && ok && baud > 0
+        && m_serial.portName() == port
+        && m_serial.baudRate() == baud) {
+        return true;
+    }
+
+    if (openSelectedSerialPort())
+        return true;
+
+    const QString msg = port.isEmpty()
+        ? tr("No serial port selected")
+        : tr("Failed to open serial port: %1").arg(port);
+    MsgWnd::ShowNormalInfo(msg);
+    ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("[ERROR] %1").arg(msg));
+    return false;
 }
 
 void MainWnd::closeSerialPort()
@@ -2101,6 +2118,9 @@ bool MainWnd::startStInputIoQuery()
 
 void MainWnd::sendSelectedBoardQuery()
 {
+    if (!ensureSerialPortOpen())
+        return;
+
     const QVariant cmdVar = ui->cb_board_cmd->currentData();
     if (!cmdVar.isValid()) {
         const QString msg = tr("No query command selected");
@@ -2130,15 +2150,6 @@ void MainWnd::sendSelectedBoardQuery()
     }
 
     sendBuiltFrame(cmd, QByteArray());
-}
-
-void MainWnd::on_btn_nor_open_port_clicked()
-{
-    if (m_serial.isOpen()) {
-        closeSerialPort();
-        return;
-    }
-    openSelectedSerialPort();
 }
 
 void MainWnd::on_btn_query_board_version_clicked()
@@ -2393,13 +2404,11 @@ void MainWnd::setInputsEnabled(bool enabled)
     ui->le_apn->setEnabled(enabled);
     ui->le_net->setEnabled(enabled);
 
-    // 串口打开时不允许改端口/波特率（使用独立 SerialManager）
-    const bool serialEditable = enabled && !m_serial.isOpen();
-    ui->cb_serial_port->setEnabled(serialEditable);
-    ui->cb_baudrate->setEnabled(serialEditable);
-    ui->btn_nor_open_port->setEnabled(enabled);
+    // 串口打开时仍允许改端口/波特率；下次发送查询会按当前选择打开
+    ui->cb_serial_port->setEnabled(enabled);
+    ui->cb_baudrate->setEnabled(enabled);
     ui->cb_board_cmd->setEnabled(enabled);
-    ui->btn_query_board_version->setEnabled(enabled && m_serial.isOpen());
+    ui->btn_query_board_version->setEnabled(enabled);
     ui->btn_nor_one_click_test->setEnabled(enabled && !m_oneClickTestActive);
 
     // 强制刷新界面

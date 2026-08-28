@@ -24,6 +24,16 @@ bool SerialManager::isOpen() const
     return m_port.isOpen();
 }
 
+QString SerialManager::portName() const
+{
+    return m_port.portName();
+}
+
+int SerialManager::baudRate() const
+{
+    return m_port.baudRate();
+}
+
 void SerialManager::setTimeoutMs(int ms)
 {
     m_timeoutMs = qMax(50, ms);

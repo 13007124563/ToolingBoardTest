@@ -16,6 +16,8 @@ public:
 
     QStringList availablePorts() const;
     bool isOpen() const;
+    QString portName() const;
+    int baudRate() const;
 
     void setTimeoutMs(int ms);
     int timeoutMs() const;

@@ -93,6 +93,7 @@ protected:
     void refreshSerialPorts();
     void updateOpenPortButton();
     bool openSelectedSerialPort();
+    bool ensureSerialPortOpen();
     void closeSerialPort();
     bool sendBuiltFrame(quint8 cmd, const QByteArray &info = QByteArray());
     void sendSelectedBoardQuery();
@@ -194,7 +195,6 @@ protected slots:
     void on_btn_nor_record_clicked();
 
     void on_btn_nor_reconnect_clicked();
-    void on_btn_nor_open_port_clicked();
     void on_btn_query_board_version_clicked();
 
     void onSerialPortOpened(const QString &portName);

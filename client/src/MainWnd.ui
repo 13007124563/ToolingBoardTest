@@ -105,18 +105,6 @@ QPushButton[objectName=&quot;btn_nor_record&quot;]:pressed
 	background-color: #00A042;
 }
 
-/* 白色按钮 - 打开/关闭串口 */
-QPushButton[objectName=&quot;btn_nor_open_port&quot;]
-{
-	background-color: #FFFFFF;
-	color: #005FA7;
-	border: 2px solid #005FA7;
-}
-QPushButton[objectName=&quot;btn_nor_open_port&quot;]:pressed
-{
-	background-color: #E8F2FA;
-}
-
 /* 白色按钮 - 清空测试结果 */
 QPushButton[objectName=&quot;btn_nor_clear&quot;]
 {
@@ -392,7 +380,6 @@ QComboBox::down-arrow {
          <item><widget class="QPushButton" name="btn_nor_version"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Image Version</string></property></widget></item>
          <item><widget class="QPushButton" name="btn_nor_all_test"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>IOT Test</string></property></widget></item>
          
-         <item><widget class="QPushButton" name="btn_nor_open_port"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Open Serial Port</string></property></widget></item>
          <item><widget class="QPushButton" name="btn_query_board_version"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Send Query</string></property></widget></item>
          <item><widget class="QPushButton" name="btn_nor_record"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Test Record</string></property></widget></item>
          <item><widget class="QPushButton" name="btn_nor_clear"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Clear Test Result</string></property></widget></item>
