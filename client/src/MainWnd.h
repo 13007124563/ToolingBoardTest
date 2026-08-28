@@ -152,19 +152,6 @@ protected:
     QString makeSerialExchangeDetailLog(const QString &stepLabel, const QString &parsedContent,
                                         const QString &rxContent = QString()) const;
 
-    enum class SingleVoltageTestPhase {
-        None,
-        WaitResponse,
-    };
-    bool isSingleVoltageBoardCmd(quint8 cmd) const;
-    QString singleVoltageI2cCommandLine(quint8 i2cCmd) const;
-    bool runStm32I2cSingleCommand(quint8 i2cCmd, QString *output = nullptr);
-    bool startSingleVoltageQuery(quint8 boardCmd);
-    bool sendSingleVoltageSerialQuery();
-    void handleSingleVoltageSerialResponse(const Protocol::Frame &frame, const QString &parsedText);
-    void finalizeSingleVoltageTest();
-    void failSingleVoltageTest(const QString &reason);
-
     enum class StInputIoTestPhase {
         None,
         WaitHighSerial,
@@ -266,15 +253,6 @@ private:
     bool m_dualVoltageHighOk = false;
     bool m_dualVoltageLowReadingValid = false;
     bool m_dualVoltageHighReadingValid = false;
-
-    SingleVoltageTestPhase m_singleVoltagePhase = SingleVoltageTestPhase::None;
-    quint8 m_singleVoltageBoardCmd = 0;
-    quint8 m_singleVoltageI2cCmd = 0;
-    QString m_singleVoltageLogTag;
-    QString m_singleVoltageTestDetailLog;
-    QString m_singleVoltageSummary;
-    bool m_singleVoltageOk = false;
-    bool m_singleVoltageReadingValid = false;
 
     StInputIoTestPhase m_stInputIoPhase = StInputIoTestPhase::None;
     QString m_stInputIoLogTag;

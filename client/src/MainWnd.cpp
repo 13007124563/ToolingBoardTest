@@ -931,20 +931,6 @@ void MainWnd::proceedOneClickNextQueryOrFinish()
             continue;
         }
 
-        if (isSingleVoltageBoardCmd(cmd)) {
-            if (startSingleVoltageQuery(cmd)) {
-                qDebug() << "[DEBUG]" << m_singleVoltageLogTag
-                         << "one-click startSingleVoltageQuery ok, awaiting response";
-                m_oneClickTestAwaitingQuery = true;
-                return;
-            }
-            qDebug() << "[DEBUG] one-click startSingleVoltageQuery failed, boardCmd=0x"
-                     << QString::number(cmd, 16)
-                     << "index=" << m_oneClickQueryIndex;
-            ++m_oneClickQueryIndex;
-            continue;
-        }
-
         if (isStInputIoBoardCmd(cmd)) {
             if (startStInputIoQuery()) {
                 qDebug() << "[DEBUG]" << m_stInputIoLogTag
@@ -1307,7 +1293,8 @@ bool MainWnd::isDualVoltageBoardCmd(quint8 cmd) const
 {
     return cmd == Protocol::CmdPrinterCn43Test
         || cmd == Protocol::CmdVout5vCn39Test
-        || cmd == Protocol::CmdVout12vCn47Test;
+        || cmd == Protocol::CmdVout12vCn47Test
+        || cmd == Protocol::CmdProximityCn13Test;
 }
 
 bool MainWnd::dualVoltageTestConfig(quint8 boardCmd, quint8 &i2cCmd, QString &logTag) const
@@ -1324,6 +1311,10 @@ bool MainWnd::dualVoltageTestConfig(quint8 boardCmd, quint8 &i2cCmd, QString &lo
     case Protocol::CmdVout12vCn47Test:
         i2cCmd = 0x3B;
         logTag = QStringLiteral("DualVoltage 0x05");
+        return true;
+    case Protocol::CmdProximityCn13Test:
+        i2cCmd = 0x39;
+        logTag = QStringLiteral("DualVoltage 0x06");
         return true;
     default:
         return false;
@@ -1740,266 +1731,6 @@ bool MainWnd::startDualVoltageQuery(quint8 boardCmd)
     return true;
 }
 
-bool MainWnd::isSingleVoltageBoardCmd(quint8 cmd) const
-{
-    return cmd == Protocol::CmdProximityCn13Test;
-}
-
-QString MainWnd::singleVoltageI2cCommandLine(quint8 i2cCmd) const
-{
-    return QStringLiteral("$ /etc/zl_test/stm32_i2c_test 0x%1")
-        .arg(i2cCmd, 2, 16, QChar('0'));
-}
-
-bool MainWnd::runStm32I2cSingleCommand(quint8 i2cCmd, QString *output)
-{
-#ifdef Q_OS_WIN
-    Q_UNUSED(i2cCmd);
-    const QString simulated = QStringLiteral("SUCCESS[00]\nTest completed successfully!");
-    if (output)
-        *output = simulated;
-    return true;
-#else
-    QProcess process;
-    process.setWorkingDirectory(QStringLiteral("/etc/zl_test"));
-    process.start(QStringLiteral("/etc/zl_test/stm32_i2c_test"),
-                  QStringList() << QStringLiteral("0x%1").arg(i2cCmd, 0, 16));
-    if (!process.waitForFinished(10000)) {
-        process.kill();
-        qDebug() << "[DEBUG]" << m_singleVoltageLogTag
-                 << "runStm32I2cSingleCommand timeout, i2cCmd=0x"
-                 << QString::number(i2cCmd, 16);
-        return false;
-    }
-
-    const QString out = QString::fromUtf8(process.readAllStandardOutput());
-    const QString err = QString::fromUtf8(process.readAllStandardError());
-    if (output)
-        *output = out + err;
-
-    if (process.exitCode() != 0) {
-        qDebug() << "[DEBUG]" << m_singleVoltageLogTag
-                 << "runStm32I2cSingleCommand failed, i2cCmd=0x"
-                 << QString::number(i2cCmd, 16)
-                 << "exitCode=" << process.exitCode()
-                 << "output=" << (out + err).trimmed();
-        return false;
-    }
-
-    if (!out.contains(QStringLiteral("SUCCESS"))
-        && !out.contains(QStringLiteral("Test completed successfully"))) {
-        qDebug() << "[DEBUG]" << m_singleVoltageLogTag
-                 << "runStm32I2cSingleCommand missing SUCCESS, i2cCmd=0x"
-                 << QString::number(i2cCmd, 16)
-                 << "output=" << (out + err).trimmed();
-        return false;
-    }
-
-    return true;
-#endif
-}
-
-bool MainWnd::sendSingleVoltageSerialQuery()
-{
-    QByteArray info;
-    info.append(static_cast<char>(Protocol::kReadVoltageHigh));
-
-    m_lastBoardTxHex.clear();
-    m_lastBoardTxTime = QDateTime();
-    return sendBuiltFrame(m_singleVoltageBoardCmd, info);
-}
-
-void MainWnd::failSingleVoltageTest(const QString &reason)
-{
-    qDebug() << "[DEBUG]" << m_singleVoltageLogTag << "failSingleVoltageTest, reason=" << reason
-             << "phase=" << static_cast<int>(m_singleVoltagePhase);
-
-    if (QLineEdit *edit = boardTestResultEdit(m_singleVoltageBoardCmd))
-        setLabelFailed(edit);
-
-    if (!m_singleVoltageTestDetailLog.isEmpty())
-        m_singleVoltageTestDetailLog += QStringLiteral("\n\n");
-    m_singleVoltageTestDetailLog += tr("Failure reason: %1").arg(reason);
-
-    const QString summary = tr("Test failed");
-    saveSerialTestRecord(m_singleVoltageBoardCmd, summary, m_singleVoltageTestDetailLog,
-                         zl::EResultType_State_error);
-
-    const QString logTag = m_singleVoltageLogTag;
-    m_singleVoltagePhase = SingleVoltageTestPhase::None;
-    m_singleVoltageBoardCmd = 0;
-    m_singleVoltageI2cCmd = 0;
-    m_singleVoltageLogTag.clear();
-
-    if (m_oneClickTestAwaitingQuery) {
-        qDebug() << "[DEBUG]" << logTag
-                 << "failSingleVoltageTest proceed one-click, next index="
-                 << (m_oneClickQueryIndex + 1);
-        ++m_oneClickQueryIndex;
-        proceedOneClickNextQueryOrFinish();
-    }
-}
-
-void MainWnd::finalizeSingleVoltageTest()
-{
-    QLineEdit *edit = boardTestResultEdit(m_singleVoltageBoardCmd);
-    if (!edit) {
-        qDebug() << "[WARN]" << m_singleVoltageLogTag << "finalizeSingleVoltageTest skip: no result edit";
-        m_singleVoltagePhase = SingleVoltageTestPhase::None;
-        m_singleVoltageBoardCmd = 0;
-        m_singleVoltageI2cCmd = 0;
-        m_singleVoltageLogTag.clear();
-        if (m_oneClickTestAwaitingQuery) {
-            ++m_oneClickQueryIndex;
-            proceedOneClickNextQueryOrFinish();
-        }
-        return;
-    }
-
-    edit->setText(m_singleVoltageSummary);
-
-    const bool overallOk = m_singleVoltageReadingValid && m_singleVoltageOk;
-
-    if (overallOk) {
-        qDebug() << "[DEBUG]" << m_singleVoltageLogTag << "finalizeSingleVoltageTest success:"
-                 << m_singleVoltageSummary;
-        edit->setStyleSheet("");
-        saveSerialTestRecord(m_singleVoltageBoardCmd, m_singleVoltageSummary, m_singleVoltageTestDetailLog,
-                             zl::EResultType_Success);
-    } else {
-        qDebug() << "[DEBUG]" << m_singleVoltageLogTag << "finalizeSingleVoltageTest failed:"
-                 << "valid=" << m_singleVoltageReadingValid
-                 << "ok=" << m_singleVoltageOk
-                 << "display=" << m_singleVoltageSummary;
-        setLabelFailed(edit);
-        if (!m_singleVoltageTestDetailLog.isEmpty())
-            m_singleVoltageTestDetailLog += QStringLiteral("\n\n");
-        m_singleVoltageTestDetailLog += tr("High voltage test failed");
-        saveSerialTestRecord(m_singleVoltageBoardCmd, tr("Test failed"), m_singleVoltageTestDetailLog,
-                             zl::EResultType_State_error);
-    }
-
-    const QString logTag = m_singleVoltageLogTag;
-    m_singleVoltagePhase = SingleVoltageTestPhase::None;
-    m_singleVoltageBoardCmd = 0;
-    m_singleVoltageI2cCmd = 0;
-    m_singleVoltageLogTag.clear();
-
-    if (m_oneClickTestAwaitingQuery) {
-        qDebug() << "[DEBUG]" << logTag
-                 << "finalizeSingleVoltageTest proceed one-click, next index="
-                 << (m_oneClickQueryIndex + 1);
-        ++m_oneClickQueryIndex;
-        proceedOneClickNextQueryOrFinish();
-    }
-}
-
-void MainWnd::handleSingleVoltageSerialResponse(const Protocol::Frame &frame, const QString &parsedText)
-{
-    const QString rxContent = Protocol::ProtocolCodec::frameToHex(frame.raw);
-
-    if (frame.resp != Protocol::kRespUpOk) {
-        const QString failReason = parsedText.trimmed().isEmpty()
-            ? tr("Response error, resp=0x%1").arg(frame.resp, 2, 16, QChar('0'))
-            : parsedText.trimmed();
-        if (!m_singleVoltageTestDetailLog.isEmpty())
-            m_singleVoltageTestDetailLog += QStringLiteral("\n\n");
-        m_singleVoltageTestDetailLog += makeSerialExchangeDetailLog(tr("Read high voltage"), failReason, rxContent);
-        qDebug() << "[DEBUG]" << m_singleVoltageLogTag
-                 << "handleSingleVoltageSerialResponse resp error, resp=0x"
-                 << QString::number(frame.resp, 16)
-                 << "reason=" << failReason;
-        failSingleVoltageTest(failReason);
-        return;
-    }
-
-    Protocol::VoltageReading reading;
-    if (!Protocol::ResponseParser::parseSingleVoltage(frame, reading)) {
-        const QString failReason = tr("Failed to parse voltage data");
-        if (!m_singleVoltageTestDetailLog.isEmpty())
-            m_singleVoltageTestDetailLog += QStringLiteral("\n\n");
-        m_singleVoltageTestDetailLog += makeSerialExchangeDetailLog(tr("Read high voltage"), failReason, rxContent);
-        qDebug() << "[DEBUG]" << m_singleVoltageLogTag
-                 << "handleSingleVoltageSerialResponse parse failed, info="
-                 << Protocol::ProtocolCodec::frameToHex(frame.info);
-        failSingleVoltageTest(failReason);
-        return;
-    }
-
-    const QString parsedContent = parsedText.trimmed().isEmpty()
-        ? Protocol::ResponseParser::formatVoltageSummary(tr("High voltage"), reading)
-        : parsedText.trimmed();
-
-    m_singleVoltageSummary = Protocol::ResponseParser::formatVoltageSummary(tr("High voltage"), reading);
-    m_singleVoltageOk = reading.isNormal();
-    m_singleVoltageReadingValid = true;
-
-    if (!m_singleVoltageTestDetailLog.isEmpty())
-        m_singleVoltageTestDetailLog += QStringLiteral("\n\n");
-    m_singleVoltageTestDetailLog += makeSerialExchangeDetailLog(tr("Read high voltage"), parsedContent, rxContent);
-
-    qDebug() << "[DEBUG]" << m_singleVoltageLogTag << "high voltage read:"
-             << m_singleVoltageSummary
-             << "ok=" << m_singleVoltageOk;
-
-    finalizeSingleVoltageTest();
-}
-
-bool MainWnd::startSingleVoltageQuery(quint8 boardCmd)
-{
-    if (boardCmd != Protocol::CmdProximityCn13Test) {
-        qDebug() << "[WARN] startSingleVoltageQuery unsupported boardCmd=0x"
-                 << QString::number(boardCmd, 16);
-        return false;
-    }
-
-    m_singleVoltageBoardCmd = boardCmd;
-    m_singleVoltageI2cCmd = 0x07;
-    m_singleVoltageLogTag = QStringLiteral("SingleVoltage 0x06");
-
-    qDebug() << "[DEBUG]" << m_singleVoltageLogTag << "startSingleVoltageQuery begin";
-
-    m_singleVoltagePhase = SingleVoltageTestPhase::None;
-    m_singleVoltageTestDetailLog.clear();
-    m_singleVoltageSummary.clear();
-    m_singleVoltageOk = false;
-    m_singleVoltageReadingValid = false;
-
-    m_lastBoardQueryCmd = boardCmd;
-    clearBoardTestResultField(boardCmd);
-
-    ui->lb_test_cmd_excute_return_msg->appendPlainText(
-        singleVoltageI2cCommandLine(m_singleVoltageI2cCmd));
-    QString i2cOutput;
-    if (!runStm32I2cSingleCommand(m_singleVoltageI2cCmd, &i2cOutput)) {
-        if (!i2cOutput.trimmed().isEmpty())
-            ui->lb_test_cmd_excute_return_msg->appendPlainText(i2cOutput.trimmed());
-        m_singleVoltageTestDetailLog = tr("I2C input2 level command failed: ./stm32_i2c_test 0x%1")
-            .arg(m_singleVoltageI2cCmd, 2, 16, QChar('0'));
-        if (!i2cOutput.trimmed().isEmpty())
-            m_singleVoltageTestDetailLog += QStringLiteral("\n") + i2cOutput.trimmed();
-        qDebug() << "[DEBUG]" << m_singleVoltageLogTag << "startSingleVoltageQuery I2C command failed";
-        failSingleVoltageTest(tr("I2C input2 level command failed"));
-        return false;
-    }
-    if (!i2cOutput.trimmed().isEmpty())
-        ui->lb_test_cmd_excute_return_msg->appendPlainText(i2cOutput.trimmed());
-    m_singleVoltageTestDetailLog = tr("I2C input2 level command: ./stm32_i2c_test 0x%1")
-        .arg(m_singleVoltageI2cCmd, 2, 16, QChar('0'));
-    if (!i2cOutput.trimmed().isEmpty())
-        m_singleVoltageTestDetailLog += QStringLiteral("\n") + i2cOutput.trimmed();
-
-    m_singleVoltagePhase = SingleVoltageTestPhase::WaitResponse;
-    if (!sendSingleVoltageSerialQuery()) {
-        qDebug() << "[DEBUG]" << m_singleVoltageLogTag
-                 << "startSingleVoltageQuery send high voltage query failed";
-        failSingleVoltageTest(tr("Failed to send high voltage query"));
-        return false;
-    }
-    qDebug() << "[DEBUG]" << m_singleVoltageLogTag << "startSingleVoltageQuery ok, phase=WaitResponse";
-    return true;
-}
-
 bool MainWnd::isStInputIoBoardCmd(quint8 cmd) const
 {
     return cmd == Protocol::CmdStInputIoTest;
@@ -2391,13 +2122,6 @@ void MainWnd::sendSelectedBoardQuery()
         return;
     }
 
-    if (isSingleVoltageBoardCmd(cmd)) {
-        qDebug() << "[DEBUG] sendSelectedBoardQuery start single voltage test, boardCmd=0x"
-                 << QString::number(cmd, 16);
-        startSingleVoltageQuery(cmd);
-        return;
-    }
-
     if (isStInputIoBoardCmd(cmd)) {
         qDebug() << "[DEBUG] sendSelectedBoardQuery start ST_INPUT IO test, boardCmd=0x"
                  << QString::number(cmd, 16);
@@ -2469,15 +2193,6 @@ void MainWnd::onSerialFrameReceived(const Protocol::Frame &frame, const QString 
                  << "onSerialFrameReceived delegate to handleDualVoltageSerialResponse, phase="
                  << static_cast<int>(m_dualVoltagePhase);
         handleDualVoltageSerialResponse(frame, parsedText);
-        return;
-    }
-
-    if (isSingleVoltageBoardCmd(frame.cmd) && m_singleVoltagePhase != SingleVoltageTestPhase::None
-        && frame.cmd == m_singleVoltageBoardCmd) {
-        qDebug() << "[DEBUG]" << m_singleVoltageLogTag
-                 << "onSerialFrameReceived delegate to handleSingleVoltageSerialResponse, phase="
-                 << static_cast<int>(m_singleVoltagePhase);
-        handleSingleVoltageSerialResponse(frame, parsedText);
         return;
     }
 
@@ -2583,18 +2298,6 @@ void MainWnd::onSerialOperationTimeout()
                  << static_cast<int>(m_dualVoltagePhase)
                  << "reason=" << failReason;
         failDualVoltageTest(failReason);
-        return;
-    }
-
-    if (m_singleVoltagePhase != SingleVoltageTestPhase::None) {
-        if (!m_singleVoltageTestDetailLog.isEmpty())
-            m_singleVoltageTestDetailLog += QStringLiteral("\n\n");
-        m_singleVoltageTestDetailLog += makeSerialExchangeDetailLog(tr("Read high voltage"), failReason);
-        qDebug() << "[DEBUG]" << m_singleVoltageLogTag
-                 << "onSerialOperationTimeout, phase="
-                 << static_cast<int>(m_singleVoltagePhase)
-                 << "reason=" << failReason;
-        failSingleVoltageTest(failReason);
         return;
     }
 
