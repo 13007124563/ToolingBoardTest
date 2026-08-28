@@ -1142,6 +1142,46 @@
         <translation>Send Query</translation>
     </message>
     <message>
+        <source>Additional Test</source>
+        <translation>Additional Test</translation>
+    </message>
+    <message>
+        <source>Network Port (CN3):</source>
+        <translation>Network Port (CN3):</translation>
+    </message>
+    <message>
+        <source>CAN Port (CN27):</source>
+        <translation>CAN Port (CN27):</translation>
+    </message>
+    <message>
+        <source>RS232 (CN35/CN36):</source>
+        <translation>RS232 (CN35/CN36):</translation>
+    </message>
+    <message>
+        <source>RS232 (CN37/CN38):</source>
+        <translation>RS232 (CN37/CN38):</translation>
+    </message>
+    <message>
+        <source>Temp/Humidity (CN40):</source>
+        <translation>Temp/Humidity (CN40):</translation>
+    </message>
+    <message>
+        <source>Light Sensor (CN44):</source>
+        <translation>Light Sensor (CN44):</translation>
+    </message>
+    <message>
+        <source>[Additional Test] Start</source>
+        <translation>[Additional Test] Start</translation>
+    </message>
+    <message>
+        <source>[Additional Test] Testing %1 ...</source>
+        <translation>[Additional Test] Testing %1 ...</translation>
+    </message>
+    <message>
+        <source>[Additional Test] Done</source>
+        <translation>[Additional Test] Done</translation>
+    </message>
+    <message>
         <source>No query command selected</source>
         <translation>No query command selected</translation>
     </message>

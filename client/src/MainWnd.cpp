@@ -323,6 +323,23 @@ void MainWnd::resetBoardTestResults()
     };
     for (quint8 cmd : kBoardTestCmds)
         clearBoardTestResultField(cmd);
+    resetExtraTestResults();
+}
+
+void MainWnd::resetExtraTestResults()
+{
+    QLineEdit *const edits[] = {
+        ui->lb_test_eth_cn3,
+        ui->lb_test_can_cn27,
+        ui->lb_test_rs232_cn35_36,
+        ui->lb_test_rs232_cn37_38,
+        ui->lb_test_th_cn40,
+        ui->lb_test_light_cn44,
+    };
+    for (QLineEdit *edit : edits) {
+        edit->clear();
+        edit->setStyleSheet("");
+    }
 }
 
 QLineEdit* MainWnd::boardTestResultEdit(quint8 cmd) const
@@ -875,7 +892,7 @@ void MainWnd::proceedOneClickAfterIot()
     if (!m_oneClickTestActive)
         return;
 
-    ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("[One-Click Test] Step 3/3: Send Query"));
+    ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("[One-Click Test] Step 3/4: Send Query"));
 
     if (!ensureSerialPortOpen()) {
         finishOneClickTest();
@@ -947,6 +964,8 @@ void MainWnd::proceedOneClickNextQueryOrFinish()
         ++m_oneClickQueryIndex;
     }
 
+    ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("[One-Click Test] Step 4/4: Additional Test"));
+    runExtraTests();
     finishOneClickTest();
 }
 
@@ -2157,6 +2176,41 @@ void MainWnd::on_btn_query_board_version_clicked()
     sendSelectedBoardQuery();
 }
 
+void MainWnd::on_btn_nor_extra_test_clicked()
+{
+    runExtraTests();
+}
+
+void MainWnd::runExtraTests()
+{
+    resetExtraTestResults();
+    ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("[Additional Test] Start"));
+
+    struct ExtraItem {
+        QLineEdit *edit;
+        const char *label;
+    };
+    const ExtraItem items[] = {
+        { ui->lb_test_eth_cn3,       QT_TR_NOOP("Network Port (CN3)") },
+        { ui->lb_test_can_cn27,      QT_TR_NOOP("CAN Port (CN27)") },
+        { ui->lb_test_rs232_cn35_36, QT_TR_NOOP("RS232 (CN35/CN36)") },
+        { ui->lb_test_rs232_cn37_38, QT_TR_NOOP("RS232 (CN37/CN38)") },
+        { ui->lb_test_th_cn40,       QT_TR_NOOP("Temp/Humidity (CN40)") },
+        { ui->lb_test_light_cn44,    QT_TR_NOOP("Light Sensor (CN44)") },
+    };
+
+    for (const ExtraItem &item : items) {
+        const QString name = tr(item.label);
+        ui->lb_test_cmd_excute_return_msg->appendPlainText(
+            tr("[Additional Test] Testing %1 ...").arg(name));
+        // TODO: 具体测试实现（网口/CAN/RS232/温湿度/光敏）
+        item.edit->setStyleSheet("");
+        item.edit->setText(QString());
+    }
+
+    ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("[Additional Test] Done"));
+}
+
 void MainWnd::onSerialPortOpened(const QString &portName)
 {
     const QString baudText = ui->cb_baudrate->currentData().toString();
@@ -2409,6 +2463,7 @@ void MainWnd::setInputsEnabled(bool enabled)
     ui->cb_baudrate->setEnabled(enabled);
     ui->cb_board_cmd->setEnabled(enabled);
     ui->btn_query_board_version->setEnabled(enabled);
+    ui->btn_nor_extra_test->setEnabled(enabled);
     ui->btn_nor_one_click_test->setEnabled(enabled && !m_oneClickTestActive);
 
     // 强制刷新界面

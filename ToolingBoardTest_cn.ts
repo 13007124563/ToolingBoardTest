@@ -933,6 +933,78 @@
         <translation>发送查询</translation>
     </message>
     <message>
+        <source>Additional Test</source>
+        <translation>新增测试</translation>
+    </message>
+    <message>
+        <source>Network Port (CN3):</source>
+        <translation>网口 CN3:</translation>
+    </message>
+    <message>
+        <source>CAN Port (CN27):</source>
+        <translation>CAN 口 CN27:</translation>
+    </message>
+    <message>
+        <source>RS232 (CN35/CN36):</source>
+        <translation>RS232 接口 CN35/CN36:</translation>
+    </message>
+    <message>
+        <source>RS232 (CN37/CN38):</source>
+        <translation>RS232 接口 CN37/CN38:</translation>
+    </message>
+    <message>
+        <source>Temp/Humidity (CN40):</source>
+        <translation>温湿度检测接口 CN40:</translation>
+    </message>
+    <message>
+        <source>Light Sensor (CN44):</source>
+        <translation>光敏检测接口 CN44:</translation>
+    </message>
+    <message>
+        <source>Network Port (CN3)</source>
+        <translation>网口 CN3</translation>
+    </message>
+    <message>
+        <source>CAN Port (CN27)</source>
+        <translation>CAN 口 CN27</translation>
+    </message>
+    <message>
+        <source>RS232 (CN35/CN36)</source>
+        <translation>RS232 接口 CN35/CN36</translation>
+    </message>
+    <message>
+        <source>RS232 (CN37/CN38)</source>
+        <translation>RS232 接口 CN37/CN38</translation>
+    </message>
+    <message>
+        <source>Temp/Humidity (CN40)</source>
+        <translation>温湿度检测接口 CN40</translation>
+    </message>
+    <message>
+        <source>Light Sensor (CN44)</source>
+        <translation>光敏检测接口 CN44</translation>
+    </message>
+    <message>
+        <source>[Additional Test] Start</source>
+        <translation>[新增测试] 开始</translation>
+    </message>
+    <message>
+        <source>[Additional Test] Testing %1 ...</source>
+        <translation>[新增测试] 正在测试 %1 ...</translation>
+    </message>
+    <message>
+        <source>[Additional Test] Done</source>
+        <translation>[新增测试] 完成</translation>
+    </message>
+    <message>
+        <source>[One-Click Test] Step 3/4: Send Query</source>
+        <translation>[一键测试] 步骤 3/4: 发送查询</translation>
+    </message>
+    <message>
+        <source>[One-Click Test] Step 4/4: Additional Test</source>
+        <translation>[一键测试] 步骤 4/4: 新增测试</translation>
+    </message>
+    <message>
         <source>No query command selected</source>
         <translation>未选择查询指令</translation>
     </message>

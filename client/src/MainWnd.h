@@ -52,6 +52,8 @@ protected:
     void resetVersionInfo();
 
     void resetBoardTestResults();
+    void resetExtraTestResults();
+    void runExtraTests();
 
     QLineEdit* boardTestResultEdit(quint8 cmd) const;
     void clearBoardTestResultField(quint8 cmd);
@@ -196,6 +198,7 @@ protected slots:
 
     void on_btn_nor_reconnect_clicked();
     void on_btn_query_board_version_clicked();
+    void on_btn_nor_extra_test_clicked();
 
     void onSerialPortOpened(const QString &portName);
     void onSerialPortClosed();
