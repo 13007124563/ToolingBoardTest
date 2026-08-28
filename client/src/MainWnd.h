@@ -165,6 +165,22 @@ protected:
     void finalizeSingleVoltageTest();
     void failSingleVoltageTest(const QString &reason);
 
+    enum class StInputIoTestPhase {
+        None,
+        WaitHighSerial,
+        WaitLowSerial,
+    };
+    bool isStInputIoBoardCmd(quint8 cmd) const;
+    QString stInputIoI2cCommandLine(quint8 i2cCmd) const;
+    bool runStm32I2cGetInputCommand(quint8 i2cCmd, int &inputValue, QString *output = nullptr,
+                                    int simExpectedLevel = -1);
+    bool verifyStInputIoI2cInputs(int expectedLevel, QString &summaryOut, QString &detailSectionOut);
+    bool startStInputIoQuery();
+    bool sendStInputIoSerialQuery(quint8 outputLevel);
+    void handleStInputIoSerialResponse(const Protocol::Frame &frame, const QString &parsedText);
+    void finalizeStInputIoTest();
+    void failStInputIoTest(const QString &reason);
+
 protected slots:
 
     void lang_change();
@@ -259,6 +275,16 @@ private:
     QString m_singleVoltageSummary;
     bool m_singleVoltageOk = false;
     bool m_singleVoltageReadingValid = false;
+
+    StInputIoTestPhase m_stInputIoPhase = StInputIoTestPhase::None;
+    QString m_stInputIoLogTag;
+    QString m_stInputIoTestDetailLog;
+    QString m_stInputIoHighSummary;
+    QString m_stInputIoLowSummary;
+    bool m_stInputIoHighOk = false;
+    bool m_stInputIoLowOk = false;
+    bool m_stInputIoHighValid = false;
+    bool m_stInputIoLowValid = false;
 };
 
 #endif // MAINWND_H

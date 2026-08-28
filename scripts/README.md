@@ -37,7 +37,7 @@ python3 scripts/protocol_test.py
 | 3.7 | 0x07 | `02 7F 09 01 07 FF 00 1E C3` | ST_INPUT IO 故障标记 |
 
 0x03–0x06 下行 INFO（V1.1）：`00` 读低电平 / `01` 读高电平。  
-0x07 下行 INFO：`00` 低电平 / `01` 高电平（程序默认发 `00`）。
+0x07：先串口 INFO=`01` 置高，I2C 读 INPUT1(CN45)/INPUT2(CN13) 应为 1；再 INFO=`00` 置低，I2C 读应为 0。
 
 ## 3. 开发板 UI 预期
 

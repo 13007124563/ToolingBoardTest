@@ -31,6 +31,10 @@ enum Command : quint8 {
 static const quint8 kReadVoltageLow  = 0x00;
 static const quint8 kReadVoltageHigh = 0x01;
 
+// 0x07 下行 INFO 输出电平选择
+static const quint8 kOutputLevelLow  = 0x00;
+static const quint8 kOutputLevelHigh = 0x01;
+
 inline bool commandUsesReadLevelInfo(quint8 cmd)
 {
     return cmd >= CmdPrinterCn43Test && cmd <= CmdProximityCn13Test;

@@ -1025,6 +1025,58 @@
         <translation>I2C input2电平命令失败</translation>
     </message>
     <message>
+        <source>Set output high (INFO=0x01)</source>
+        <translation>设置输出高电平 (INFO=0x01)</translation>
+    </message>
+    <message>
+        <source>Set output low (INFO=0x00)</source>
+        <translation>设置输出低电平 (INFO=0x00)</translation>
+    </message>
+    <message>
+        <source>I2C read %1 (%2) failed: ./stm32_i2c_test 0x%3</source>
+        <translation>I2C读取%1 (%2)失败: ./stm32_i2c_test 0x%3</translation>
+    </message>
+    <message>
+        <source>I2C read %1 (%2): ./stm32_i2c_test 0x%3</source>
+        <translation>I2C读取%1 (%2): ./stm32_i2c_test 0x%3</translation>
+    </message>
+    <message>
+        <source>Expected: %1, Actual: %2 (%3)</source>
+        <translation>期望: %1, 实际: %2 (%3)</translation>
+    </message>
+    <message>
+        <source>High: %1</source>
+        <translation>高电平: %1</translation>
+    </message>
+    <message>
+        <source>Low: %1</source>
+        <translation>低电平: %1</translation>
+    </message>
+    <message>
+        <source>High: N/A</source>
+        <translation>高电平: N/A</translation>
+    </message>
+    <message>
+        <source>Low: N/A</source>
+        <translation>低电平: N/A</translation>
+    </message>
+    <message>
+        <source>High output I2C verification failed</source>
+        <translation>高电平输出I2C校验失败</translation>
+    </message>
+    <message>
+        <source>Low output I2C verification failed</source>
+        <translation>低电平输出I2C校验失败</translation>
+    </message>
+    <message>
+        <source>Failed to send high output query</source>
+        <translation>发送高电平输出查询失败</translation>
+    </message>
+    <message>
+        <source>Failed to send low output query</source>
+        <translation>发送低电平输出查询失败</translation>
+    </message>
+    <message>
         <source>Test failed</source>
         <translation>测试失败</translation>
     </message>

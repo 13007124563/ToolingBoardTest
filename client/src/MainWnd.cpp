@@ -917,10 +917,6 @@ void MainWnd::proceedOneClickNextQueryOrFinish()
         m_lastBoardTxTime = QDateTime();
         clearBoardTestResultField(cmd);
 
-        QByteArray info;
-        if (cmd == Protocol::CmdStInputIoTest)
-            info.append(static_cast<char>(0x00));
-
         if (isDualVoltageBoardCmd(cmd)) {
             if (startDualVoltageQuery(cmd)) {
                 qDebug() << "[DEBUG]" << m_dualVoltageLogTag
@@ -949,7 +945,21 @@ void MainWnd::proceedOneClickNextQueryOrFinish()
             continue;
         }
 
-        if (sendBuiltFrame(cmd, info)) {
+        if (isStInputIoBoardCmd(cmd)) {
+            if (startStInputIoQuery()) {
+                qDebug() << "[DEBUG]" << m_stInputIoLogTag
+                         << "one-click startStInputIoQuery ok, awaiting response";
+                m_oneClickTestAwaitingQuery = true;
+                return;
+            }
+            qDebug() << "[DEBUG] one-click startStInputIoQuery failed, boardCmd=0x"
+                     << QString::number(cmd, 16)
+                     << "index=" << m_oneClickQueryIndex;
+            ++m_oneClickQueryIndex;
+            continue;
+        }
+
+        if (sendBuiltFrame(cmd, QByteArray())) {
             m_oneClickTestAwaitingQuery = true;
             return;
         }
@@ -1990,6 +2000,374 @@ bool MainWnd::startSingleVoltageQuery(quint8 boardCmd)
     return true;
 }
 
+bool MainWnd::isStInputIoBoardCmd(quint8 cmd) const
+{
+    return cmd == Protocol::CmdStInputIoTest;
+}
+
+QString MainWnd::stInputIoI2cCommandLine(quint8 i2cCmd) const
+{
+    return QStringLiteral("$ /etc/zl_test/stm32_i2c_test 0x%1")
+        .arg(i2cCmd, 0, 16);
+}
+
+bool MainWnd::runStm32I2cGetInputCommand(quint8 i2cCmd, int &inputValue, QString *output,
+                                         int simExpectedLevel)
+{
+    inputValue = -1;
+
+#ifdef Q_OS_WIN
+    Q_UNUSED(i2cCmd);
+    inputValue = simExpectedLevel >= 0 ? simExpectedLevel : 1;
+    const QString key = (i2cCmd == 0x06)
+        ? QStringLiteral("I2C_CMD_GET_INPUT1")
+        : QStringLiteral("I2C_CMD_GET_INPUT2");
+    const QString simulated = QStringLiteral("%1:%2\nTest completed successfully!")
+        .arg(key)
+        .arg(inputValue);
+    if (output)
+        *output = simulated;
+    return true;
+#else
+    QProcess process;
+    process.setWorkingDirectory(QStringLiteral("/etc/zl_test"));
+    process.start(QStringLiteral("/etc/zl_test/stm32_i2c_test"),
+                  QStringList() << QStringLiteral("0x%1").arg(i2cCmd, 0, 16));
+    if (!process.waitForFinished(10000)) {
+        process.kill();
+        qDebug() << "[DEBUG]" << m_stInputIoLogTag
+                 << "runStm32I2cGetInputCommand timeout, i2cCmd=0x"
+                 << QString::number(i2cCmd, 16);
+        return false;
+    }
+
+    const QString out = QString::fromUtf8(process.readAllStandardOutput());
+    const QString err = QString::fromUtf8(process.readAllStandardError());
+    const QString combined = out + err;
+    if (output)
+        *output = combined;
+
+    if (process.exitCode() != 0) {
+        qDebug() << "[DEBUG]" << m_stInputIoLogTag
+                 << "runStm32I2cGetInputCommand failed, i2cCmd=0x"
+                 << QString::number(i2cCmd, 16)
+                 << "exitCode=" << process.exitCode()
+                 << "output=" << combined.trimmed();
+        return false;
+    }
+
+    const QString pattern = (i2cCmd == 0x06)
+        ? QStringLiteral("I2C_CMD_GET_INPUT1:(\\d+)")
+        : QStringLiteral("I2C_CMD_GET_INPUT2:(\\d+)");
+    const QRegularExpression re(pattern);
+    const QRegularExpressionMatch match = re.match(combined);
+    if (!match.hasMatch()) {
+        qDebug() << "[DEBUG]" << m_stInputIoLogTag
+                 << "runStm32I2cGetInputCommand missing input marker, i2cCmd=0x"
+                 << QString::number(i2cCmd, 16)
+                 << "output=" << combined.trimmed();
+        return false;
+    }
+
+    inputValue = match.captured(1).toInt();
+    return true;
+#endif
+}
+
+bool MainWnd::verifyStInputIoI2cInputs(int expectedLevel, QString &summaryOut, QString &detailSectionOut)
+{
+    static const struct {
+        quint8 i2cCmd;
+        const char *pinName;
+        const char *inputName;
+    } kInputs[] = {
+        { 0x06, "CN45", "INPUT1" },
+        { 0x07, "CN13", "INPUT2" },
+    };
+
+    detailSectionOut.clear();
+    QStringList summaryParts;
+    bool allOk = true;
+
+    for (const auto &input : kInputs) {
+        ui->lb_test_cmd_excute_return_msg->appendPlainText(stInputIoI2cCommandLine(input.i2cCmd));
+        QString i2cOutput;
+        int value = -1;
+        if (!runStm32I2cGetInputCommand(input.i2cCmd, value, &i2cOutput, expectedLevel)) {
+            qDebug() << "[DEBUG]" << m_stInputIoLogTag
+                     << "verifyStInputIoI2cInputs I2C command failed, cmd=0x"
+                     << QString::number(input.i2cCmd, 16)
+                     << "expected=" << expectedLevel;
+            detailSectionOut = tr("I2C read %1 (%2) failed: ./stm32_i2c_test 0x%3")
+                .arg(QString::fromLatin1(input.inputName),
+                     QString::fromLatin1(input.pinName),
+                     QString::number(input.i2cCmd, 16));
+            if (!i2cOutput.trimmed().isEmpty())
+                detailSectionOut += QStringLiteral("\n") + i2cOutput.trimmed();
+            summaryOut.clear();
+            return false;
+        }
+
+        if (!i2cOutput.trimmed().isEmpty())
+            ui->lb_test_cmd_excute_return_msg->appendPlainText(i2cOutput.trimmed());
+
+        const bool match = (value == expectedLevel);
+        if (!match)
+            allOk = false;
+
+        summaryParts << tr("%1:%2 (%3)")
+                            .arg(QString::fromLatin1(input.pinName))
+                            .arg(value)
+                            .arg(match ? tr("OK") : tr("Fault"));
+
+        if (!detailSectionOut.isEmpty())
+            detailSectionOut += QStringLiteral("\n");
+        detailSectionOut += tr("I2C read %1 (%2): ./stm32_i2c_test 0x%3")
+            .arg(QString::fromLatin1(input.inputName),
+                 QString::fromLatin1(input.pinName),
+                 QString::number(input.i2cCmd, 16));
+        if (!i2cOutput.trimmed().isEmpty())
+            detailSectionOut += QStringLiteral("\n") + i2cOutput.trimmed();
+        detailSectionOut += tr("Expected: %1, Actual: %2 (%3)")
+            .arg(expectedLevel)
+            .arg(value)
+            .arg(match ? tr("OK") : tr("Fault"));
+    }
+
+    summaryOut = summaryParts.join(QStringLiteral(" | "));
+    return allOk;
+}
+
+bool MainWnd::sendStInputIoSerialQuery(quint8 outputLevel)
+{
+    QByteArray info;
+    info.append(static_cast<char>(outputLevel));
+
+    m_lastBoardTxHex.clear();
+    m_lastBoardTxTime = QDateTime();
+    return sendBuiltFrame(Protocol::CmdStInputIoTest, info);
+}
+
+void MainWnd::failStInputIoTest(const QString &reason)
+{
+    qDebug() << "[DEBUG]" << m_stInputIoLogTag << "failStInputIoTest, reason=" << reason
+             << "phase=" << static_cast<int>(m_stInputIoPhase);
+
+    if (QLineEdit *edit = boardTestResultEdit(Protocol::CmdStInputIoTest))
+        setLabelFailed(edit);
+
+    if (!m_stInputIoTestDetailLog.isEmpty())
+        m_stInputIoTestDetailLog += QStringLiteral("\n\n");
+    m_stInputIoTestDetailLog += tr("Failure reason: %1").arg(reason);
+
+    saveSerialTestRecord(Protocol::CmdStInputIoTest, tr("Test failed"), m_stInputIoTestDetailLog,
+                         zl::EResultType_State_error);
+
+    const QString logTag = m_stInputIoLogTag;
+    m_stInputIoPhase = StInputIoTestPhase::None;
+    m_stInputIoLogTag.clear();
+
+    if (m_oneClickTestAwaitingQuery) {
+        qDebug() << "[DEBUG]" << logTag
+                 << "failStInputIoTest proceed one-click, next index="
+                 << (m_oneClickQueryIndex + 1);
+        ++m_oneClickQueryIndex;
+        proceedOneClickNextQueryOrFinish();
+    }
+}
+
+void MainWnd::finalizeStInputIoTest()
+{
+    QLineEdit *edit = boardTestResultEdit(Protocol::CmdStInputIoTest);
+    if (!edit) {
+        qDebug() << "[WARN]" << m_stInputIoLogTag << "finalizeStInputIoTest skip: no result edit";
+        m_stInputIoPhase = StInputIoTestPhase::None;
+        m_stInputIoLogTag.clear();
+        if (m_oneClickTestAwaitingQuery) {
+            ++m_oneClickQueryIndex;
+            proceedOneClickNextQueryOrFinish();
+        }
+        return;
+    }
+
+    QString displayText;
+    if (m_stInputIoHighValid)
+        displayText += tr("High: %1").arg(m_stInputIoHighSummary);
+    else
+        displayText += tr("High: N/A");
+
+    displayText += QStringLiteral(" | ");
+
+    if (m_stInputIoLowValid)
+        displayText += tr("Low: %1").arg(m_stInputIoLowSummary);
+    else
+        displayText += tr("Low: N/A");
+
+    edit->setText(displayText);
+
+    const bool overallOk = m_stInputIoHighValid && m_stInputIoLowValid
+        && m_stInputIoHighOk && m_stInputIoLowOk;
+
+    if (overallOk) {
+        qDebug() << "[DEBUG]" << m_stInputIoLogTag << "finalizeStInputIoTest success:"
+                 << displayText;
+        edit->setStyleSheet("");
+        saveSerialTestRecord(Protocol::CmdStInputIoTest, displayText, m_stInputIoTestDetailLog,
+                             zl::EResultType_Success);
+    } else {
+        qDebug() << "[DEBUG]" << m_stInputIoLogTag << "finalizeStInputIoTest failed:"
+                 << "highValid=" << m_stInputIoHighValid
+                 << "highOk=" << m_stInputIoHighOk
+                 << "lowValid=" << m_stInputIoLowValid
+                 << "lowOk=" << m_stInputIoLowOk
+                 << "display=" << displayText;
+        setLabelFailed(edit);
+        if (!m_stInputIoTestDetailLog.isEmpty())
+            m_stInputIoTestDetailLog += QStringLiteral("\n\n");
+        if (!m_stInputIoHighValid || !m_stInputIoHighOk)
+            m_stInputIoTestDetailLog += tr("High output I2C verification failed");
+        if ((!m_stInputIoHighValid || !m_stInputIoHighOk)
+            && (!m_stInputIoLowValid || !m_stInputIoLowOk))
+            m_stInputIoTestDetailLog += QStringLiteral(" | ");
+        if (!m_stInputIoLowValid || !m_stInputIoLowOk)
+            m_stInputIoTestDetailLog += tr("Low output I2C verification failed");
+        saveSerialTestRecord(Protocol::CmdStInputIoTest, tr("Test failed"), m_stInputIoTestDetailLog,
+                             zl::EResultType_State_error);
+    }
+
+    const QString logTag = m_stInputIoLogTag;
+    m_stInputIoPhase = StInputIoTestPhase::None;
+    m_stInputIoLogTag.clear();
+
+    if (m_oneClickTestAwaitingQuery) {
+        qDebug() << "[DEBUG]" << logTag
+                 << "finalizeStInputIoTest proceed one-click, next index="
+                 << (m_oneClickQueryIndex + 1);
+        ++m_oneClickQueryIndex;
+        proceedOneClickNextQueryOrFinish();
+    }
+}
+
+void MainWnd::handleStInputIoSerialResponse(const Protocol::Frame &frame, const QString &parsedText)
+{
+    const QString rxContent = Protocol::ProtocolCodec::frameToHex(frame.raw);
+
+    if (frame.resp != Protocol::kRespUpOk) {
+        const QString stepLabel = (m_stInputIoPhase == StInputIoTestPhase::WaitHighSerial)
+            ? tr("Set output high (INFO=0x01)")
+            : tr("Set output low (INFO=0x00)");
+        const QString failReason = parsedText.trimmed().isEmpty()
+            ? tr("Response error, resp=0x%1").arg(frame.resp, 2, 16, QChar('0'))
+            : parsedText.trimmed();
+        if (!m_stInputIoTestDetailLog.isEmpty())
+            m_stInputIoTestDetailLog += QStringLiteral("\n\n");
+        m_stInputIoTestDetailLog += makeSerialExchangeDetailLog(stepLabel, failReason, rxContent);
+        qDebug() << "[DEBUG]" << m_stInputIoLogTag
+                 << "handleStInputIoSerialResponse resp error, phase="
+                 << static_cast<int>(m_stInputIoPhase)
+                 << "reason=" << failReason;
+        failStInputIoTest(failReason);
+        return;
+    }
+
+    const QString parsedContent = parsedText.trimmed().isEmpty()
+        ? Protocol::ResponseParser::summaryText(frame)
+        : parsedText.trimmed();
+
+    if (m_stInputIoPhase == StInputIoTestPhase::WaitHighSerial) {
+        if (!m_stInputIoTestDetailLog.isEmpty())
+            m_stInputIoTestDetailLog += QStringLiteral("\n\n");
+        m_stInputIoTestDetailLog += makeSerialExchangeDetailLog(
+            tr("Set output high (INFO=0x01)"), parsedContent, rxContent);
+
+        QString i2cSummary;
+        QString i2cDetail;
+        const bool i2cOk = verifyStInputIoI2cInputs(1, i2cSummary, i2cDetail);
+        if (!m_stInputIoTestDetailLog.isEmpty())
+            m_stInputIoTestDetailLog += QStringLiteral("\n\n");
+        m_stInputIoTestDetailLog += i2cDetail;
+
+        m_stInputIoHighSummary = i2cSummary;
+        m_stInputIoHighOk = i2cOk;
+        m_stInputIoHighValid = true;
+
+        qDebug() << "[DEBUG]" << m_stInputIoLogTag << "high output I2C verify:"
+                 << m_stInputIoHighSummary
+                 << "ok=" << m_stInputIoHighOk;
+
+        if (!i2cOk) {
+            failStInputIoTest(tr("High output I2C verification failed"));
+            return;
+        }
+
+        m_stInputIoPhase = StInputIoTestPhase::WaitLowSerial;
+        if (!sendStInputIoSerialQuery(Protocol::kOutputLevelLow)) {
+            qDebug() << "[DEBUG]" << m_stInputIoLogTag
+                     << "handleStInputIoSerialResponse send low output query failed";
+            failStInputIoTest(tr("Failed to send low output query"));
+        }
+        return;
+    }
+
+    if (m_stInputIoPhase == StInputIoTestPhase::WaitLowSerial) {
+        if (!m_stInputIoTestDetailLog.isEmpty())
+            m_stInputIoTestDetailLog += QStringLiteral("\n\n");
+        m_stInputIoTestDetailLog += makeSerialExchangeDetailLog(
+            tr("Set output low (INFO=0x00)"), parsedContent, rxContent);
+
+        QString i2cSummary;
+        QString i2cDetail;
+        const bool i2cOk = verifyStInputIoI2cInputs(0, i2cSummary, i2cDetail);
+        if (!m_stInputIoTestDetailLog.isEmpty())
+            m_stInputIoTestDetailLog += QStringLiteral("\n\n");
+        m_stInputIoTestDetailLog += i2cDetail;
+
+        m_stInputIoLowSummary = i2cSummary;
+        m_stInputIoLowOk = i2cOk;
+        m_stInputIoLowValid = true;
+
+        qDebug() << "[DEBUG]" << m_stInputIoLogTag << "low output I2C verify:"
+                 << m_stInputIoLowSummary
+                 << "ok=" << m_stInputIoLowOk;
+
+        finalizeStInputIoTest();
+        return;
+    }
+
+    qDebug() << "[WARN]" << m_stInputIoLogTag
+             << "handleStInputIoSerialResponse unexpected phase="
+             << static_cast<int>(m_stInputIoPhase);
+}
+
+bool MainWnd::startStInputIoQuery()
+{
+    m_stInputIoLogTag = QStringLiteral("StInputIo 0x07");
+
+    qDebug() << "[DEBUG]" << m_stInputIoLogTag << "startStInputIoQuery begin";
+
+    m_stInputIoPhase = StInputIoTestPhase::None;
+    m_stInputIoTestDetailLog.clear();
+    m_stInputIoHighSummary.clear();
+    m_stInputIoLowSummary.clear();
+    m_stInputIoHighOk = false;
+    m_stInputIoLowOk = false;
+    m_stInputIoHighValid = false;
+    m_stInputIoLowValid = false;
+
+    m_lastBoardQueryCmd = Protocol::CmdStInputIoTest;
+    clearBoardTestResultField(Protocol::CmdStInputIoTest);
+
+    m_stInputIoPhase = StInputIoTestPhase::WaitHighSerial;
+    if (!sendStInputIoSerialQuery(Protocol::kOutputLevelHigh)) {
+        qDebug() << "[DEBUG]" << m_stInputIoLogTag
+                 << "startStInputIoQuery send high output query failed";
+        failStInputIoTest(tr("Failed to send high output query"));
+        return false;
+    }
+    qDebug() << "[DEBUG]" << m_stInputIoLogTag << "startStInputIoQuery ok, phase=WaitHighSerial";
+    return true;
+}
+
 void MainWnd::sendSelectedBoardQuery()
 {
     const QVariant cmdVar = ui->cb_board_cmd->currentData();
@@ -2020,12 +2398,14 @@ void MainWnd::sendSelectedBoardQuery()
         return;
     }
 
-    QByteArray info;
-    // 3.7 ST_INPUT IO：下行 INFO 为输出电平（00 低 / 01 高），默认低电平与协议文档示例一致
-    if (cmd == Protocol::CmdStInputIoTest)
-        info.append(static_cast<char>(0x00));
+    if (isStInputIoBoardCmd(cmd)) {
+        qDebug() << "[DEBUG] sendSelectedBoardQuery start ST_INPUT IO test, boardCmd=0x"
+                 << QString::number(cmd, 16);
+        startStInputIoQuery();
+        return;
+    }
 
-    sendBuiltFrame(cmd, info);
+    sendBuiltFrame(cmd, QByteArray());
 }
 
 void MainWnd::on_btn_nor_open_port_clicked()
@@ -2098,6 +2478,14 @@ void MainWnd::onSerialFrameReceived(const Protocol::Frame &frame, const QString 
                  << "onSerialFrameReceived delegate to handleSingleVoltageSerialResponse, phase="
                  << static_cast<int>(m_singleVoltagePhase);
         handleSingleVoltageSerialResponse(frame, parsedText);
+        return;
+    }
+
+    if (isStInputIoBoardCmd(frame.cmd) && m_stInputIoPhase != StInputIoTestPhase::None) {
+        qDebug() << "[DEBUG]" << m_stInputIoLogTag
+                 << "onSerialFrameReceived delegate to handleStInputIoSerialResponse, phase="
+                 << static_cast<int>(m_stInputIoPhase);
+        handleStInputIoSerialResponse(frame, parsedText);
         return;
     }
 
@@ -2207,6 +2595,21 @@ void MainWnd::onSerialOperationTimeout()
                  << static_cast<int>(m_singleVoltagePhase)
                  << "reason=" << failReason;
         failSingleVoltageTest(failReason);
+        return;
+    }
+
+    if (m_stInputIoPhase != StInputIoTestPhase::None) {
+        const QString stepLabel = (m_stInputIoPhase == StInputIoTestPhase::WaitHighSerial)
+            ? tr("Set output high (INFO=0x01)")
+            : tr("Set output low (INFO=0x00)");
+        if (!m_stInputIoTestDetailLog.isEmpty())
+            m_stInputIoTestDetailLog += QStringLiteral("\n\n");
+        m_stInputIoTestDetailLog += makeSerialExchangeDetailLog(stepLabel, failReason);
+        qDebug() << "[DEBUG]" << m_stInputIoLogTag
+                 << "onSerialOperationTimeout, phase="
+                 << static_cast<int>(m_stInputIoPhase)
+                 << "reason=" << failReason;
+        failStInputIoTest(failReason);
         return;
     }
 
