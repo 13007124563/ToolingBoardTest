@@ -58,6 +58,7 @@ protected:
     void runCanPortCn27Test();
     void runRs232Cn35Cn36Test();
     void runRs232Cn37Cn38Test();
+    void runUsbPortTest();
     void applyRs232CrossTalkResult(QLineEdit *edit, const QString &logTag,
                                    const Rs232CrossTalkResult &r);
 

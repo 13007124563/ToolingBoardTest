@@ -961,6 +961,10 @@
         <translation>光敏检测接口 CN44:</translation>
     </message>
     <message>
+        <source>USB Port:</source>
+        <translation>USB 口:</translation>
+    </message>
+    <message>
         <source>Network Port (CN3)</source>
         <translation>网口 CN3</translation>
     </message>
@@ -985,6 +989,10 @@
         <translation>光敏检测接口 CN44</translation>
     </message>
     <message>
+        <source>USB Port</source>
+        <translation>USB 口</translation>
+    </message>
+    <message>
         <source>[Additional Test] Start</source>
         <translation>[新增测试] 开始</translation>
     </message>
@@ -1003,6 +1011,10 @@
     <message>
         <source>[RS232 CN35/CN36] %1</source>
         <translation>[RS232 CN35/CN36] %1</translation>
+    </message>
+    <message>
+        <source>[USB] %1</source>
+        <translation>[USB] %1</translation>
     </message>
     <message>
         <source>%1 (OK)</source>

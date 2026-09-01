@@ -75,6 +75,7 @@ SOURCES += \
     common/api/SerialManager.cpp \
     common/api/CanPortTester.cpp \
     common/api/Rs232PortTester.cpp \
+    common/api/UsbPortTester.cpp \
     common/api/protocol/modbuscrc.cpp \
     common/api/protocol/protocolframe.cpp \
     common/api/protocol/responseparser.cpp \
@@ -102,6 +103,7 @@ HEADERS += \
     common/api/SerialManager.h \
     common/api/CanPortTester.h \
     common/api/Rs232PortTester.h \
+    common/api/UsbPortTester.h \
     common/api/protocol/modbuscrc.h \
     common/api/protocol/protocolconstants.h \
     common/api/protocol/protocolframe.h \

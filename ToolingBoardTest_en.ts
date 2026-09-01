@@ -1170,6 +1170,18 @@
         <translation>Light Sensor (CN44):</translation>
     </message>
     <message>
+        <source>USB Port:</source>
+        <translation>USB Port:</translation>
+    </message>
+    <message>
+        <source>USB Port</source>
+        <translation>USB Port</translation>
+    </message>
+    <message>
+        <source>[USB] %1</source>
+        <translation>[USB] %1</translation>
+    </message>
+    <message>
         <source>[Additional Test] Start</source>
         <translation>[Additional Test] Start</translation>
     </message>
