@@ -54,6 +54,7 @@ protected:
     void resetBoardTestResults();
     void resetExtraTestResults();
     void runExtraTests();
+    void runCanPortCn27Test();
 
     QLineEdit* boardTestResultEdit(quint8 cmd) const;
     void clearBoardTestResultField(quint8 cmd);

@@ -73,6 +73,7 @@ SOURCES += \
     common/api/GlobalSignal.cpp \
     common/api/JsonConfigurator.cpp \
     common/api/SerialManager.cpp \
+    common/api/CanPortTester.cpp \
     common/api/protocol/modbuscrc.cpp \
     common/api/protocol/protocolframe.cpp \
     common/api/protocol/responseparser.cpp \
@@ -98,6 +99,7 @@ HEADERS += \
     common/api/LogHandler.h \
     common/api/MyProxyStyle.h \
     common/api/SerialManager.h \
+    common/api/CanPortTester.h \
     common/api/protocol/modbuscrc.h \
     common/api/protocol/protocolconstants.h \
     common/api/protocol/protocolframe.h \

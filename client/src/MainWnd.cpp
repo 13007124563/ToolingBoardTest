@@ -21,6 +21,7 @@
 #include "protocol/protocolconstants.h"
 #include "protocol/responseparser.h"
 #include "protocol/protocolconstants.h"
+#include "CanPortTester.h"
 
 #include <QProcess>
 #include <QFile>
@@ -2189,26 +2190,63 @@ void MainWnd::runExtraTests()
     struct ExtraItem {
         QLineEdit *edit;
         const char *label;
+        bool isCan;
     };
     const ExtraItem items[] = {
-        { ui->lb_test_eth_cn3,       QT_TR_NOOP("Network Port (CN3)") },
-        { ui->lb_test_can_cn27,      QT_TR_NOOP("CAN Port (CN27)") },
-        { ui->lb_test_rs232_cn35_36, QT_TR_NOOP("RS232 (CN35/CN36)") },
-        { ui->lb_test_rs232_cn37_38, QT_TR_NOOP("RS232 (CN37/CN38)") },
-        { ui->lb_test_th_cn40,       QT_TR_NOOP("Temp/Humidity (CN40)") },
-        { ui->lb_test_light_cn44,    QT_TR_NOOP("Light Sensor (CN44)") },
+        // 暂不测：网口 CN3 / CAN 口 CN27
+        // { ui->lb_test_eth_cn3,       QT_TR_NOOP("Network Port (CN3)"),     false },
+        // { ui->lb_test_can_cn27,      QT_TR_NOOP("CAN Port (CN27)"),        true  },
+        { ui->lb_test_rs232_cn35_36, QT_TR_NOOP("RS232 (CN35/CN36)"),      false },
+        { ui->lb_test_rs232_cn37_38, QT_TR_NOOP("RS232 (CN37/CN38)"),      false },
+        { ui->lb_test_th_cn40,       QT_TR_NOOP("Temp/Humidity (CN40)"),   false },
+        { ui->lb_test_light_cn44,    QT_TR_NOOP("Light Sensor (CN44)"),    false },
     };
 
     for (const ExtraItem &item : items) {
         const QString name = tr(item.label);
         ui->lb_test_cmd_excute_return_msg->appendPlainText(
             tr("[Additional Test] Testing %1 ...").arg(name));
-        // TODO: 具体测试实现（网口/CAN/RS232/温湿度/光敏）
+
+        if (item.isCan) {
+            runCanPortCn27Test();
+            continue;
+        }
+
+        // TODO: 网口 / RS232 / 温湿度 / 光敏
         item.edit->setStyleSheet("");
         item.edit->setText(QString());
     }
 
     ui->lb_test_cmd_excute_return_msg->appendPlainText(tr("[Additional Test] Done"));
+}
+
+void MainWnd::runCanPortCn27Test()
+{
+    QLineEdit *edit = ui->lb_test_can_cn27;
+    edit->setStyleSheet("");
+    edit->clear();
+
+    // 协议 5.9：xx∈[0x30,0x60]，默认 0x30；can0 @ 500kbps（与开发板实测一致）
+    const CanVersionQueryResult r = CanPortTester::queryFirmwareVersion(
+        QStringLiteral("can0"), 0x30, 3000, CanPortTester::kDefaultBitrate);
+
+    if (!r.detail.trimmed().isEmpty()) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+        const QStringList lines = r.detail.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+#else
+        const QStringList lines = r.detail.split(QLatin1Char('\n'), QString::SkipEmptyParts);
+#endif
+        for (const QString &line : lines)
+            ui->lb_test_cmd_excute_return_msg->appendPlainText(
+                tr("[CAN CN27] %1").arg(line));
+    }
+
+    if (r.ok) {
+        edit->setStyleSheet("");
+        edit->setText(tr("%1 (OK)").arg(r.version));
+    } else {
+        setLabelFailed(edit);
+    }
 }
 
 void MainWnd::onSerialPortOpened(const QString &portName)

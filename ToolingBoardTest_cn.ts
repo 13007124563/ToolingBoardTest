@@ -997,6 +997,14 @@
         <translation>[新增测试] 完成</translation>
     </message>
     <message>
+        <source>[CAN CN27] %1</source>
+        <translation>[CAN CN27] %1</translation>
+    </message>
+    <message>
+        <source>%1 (OK)</source>
+        <translation>%1 (OK)</translation>
+    </message>
+    <message>
         <source>[One-Click Test] Step 3/4: Send Query</source>
         <translation>[一键测试] 步骤 3/4: 发送查询</translation>
     </message>
