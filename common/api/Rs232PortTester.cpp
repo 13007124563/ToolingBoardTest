@@ -6,13 +6,15 @@
 
 const char *Rs232PortTester::kDefaultCn35Port = "ttyLP2";
 const char *Rs232PortTester::kDefaultCn36Port = "ttyLP7";
+const char *Rs232PortTester::kDefaultCn37Port = "ttyLP3";
+const char *Rs232PortTester::kDefaultCn38Port = "ttyLP5";
 
 void Rs232PortTester::closePorts()
 {
-    if (m_rs232PortCn35.isOpen())
-        m_rs232PortCn35.close();
-    if (m_rs232PortCn36.isOpen())
-        m_rs232PortCn36.close();
+    if (m_rs232PortA.isOpen())
+        m_rs232PortA.close();
+    if (m_rs232PortB.isOpen())
+        m_rs232PortB.close();
 }
 
 bool Rs232PortTester::configureAndOpen(QSerialPort &port, const QString &name, int baudRate, QString *log)
@@ -114,19 +116,20 @@ Rs232CrossTalkResult Rs232PortTester::crossTalk(const QString &portA,
 {
     Rs232CrossTalkResult result;
 
-    QString a = portA.trimmed();
-    QString b = portB.trimmed();
-    if (a.isEmpty())
-        a = QString::fromLatin1(kDefaultCn35Port);
-    if (b.isEmpty())
-        b = QString::fromLatin1(kDefaultCn36Port);
-
+    const QString a = portA.trimmed();
+    const QString b = portB.trimmed();
+    if (a.isEmpty() || b.isEmpty()) {
+        result.detail = QStringLiteral("Empty port name");
+        return result;
+    }
     if (a == b) {
         result.detail = QStringLiteral("Port A and B must be different");
         return result;
     }
-    if (baudRate <= 0)
-        baudRate = kDefaultBaudRate;
+    if (baudRate <= 0) {
+        result.detail = QStringLiteral("Invalid baud rate");
+        return result;
+    }
     if (timeoutMs <= 0)
         timeoutMs = kDefaultTimeoutMs;
 
@@ -135,22 +138,21 @@ Rs232CrossTalkResult Rs232PortTester::crossTalk(const QString &portA,
                          .arg(baudRate)
                          .arg(timeoutMs);
 
-    // 始终用本对象独立串口，不碰治具协议口
     closePorts();
 
-    if (!configureAndOpen(m_rs232PortCn35, a, baudRate, &result.detail))
+    if (!configureAndOpen(m_rs232PortA, a, baudRate, &result.detail))
         return result;
-    if (!configureAndOpen(m_rs232PortCn36, b, baudRate, &result.detail)) {
+    if (!configureAndOpen(m_rs232PortB, b, baudRate, &result.detail)) {
         closePorts();
         return result;
     }
 
-    const QByteArray aToB = QByteArrayLiteral("CN35->CN36#RS232\r\n");
-    const QByteArray bToA = QByteArrayLiteral("CN36->CN35#RS232\r\n");
+    const QByteArray aToB = (a + QStringLiteral("->") + b + QStringLiteral("#RS232\r\n")).toLatin1();
+    const QByteArray bToA = (b + QStringLiteral("->") + a + QStringLiteral("#RS232\r\n")).toLatin1();
 
-    const bool okAb = sendAndExpect(m_rs232PortCn35, m_rs232PortCn36, aToB, timeoutMs, &result.detail);
+    const bool okAb = sendAndExpect(m_rs232PortA, m_rs232PortB, aToB, timeoutMs, &result.detail);
     const bool okBa = okAb
-        && sendAndExpect(m_rs232PortCn36, m_rs232PortCn35, bToA, timeoutMs, &result.detail);
+        && sendAndExpect(m_rs232PortB, m_rs232PortA, bToA, timeoutMs, &result.detail);
 
     closePorts();
 

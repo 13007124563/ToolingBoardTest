@@ -2193,15 +2193,16 @@ void MainWnd::runExtraTests()
         const char *label;
         bool isCan;
         bool isRs232Cn3536;
+        bool isRs232Cn3738;
     };
     const ExtraItem items[] = {
         // 暂不测：网口 CN3 / CAN 口 CN27
-        // { ui->lb_test_eth_cn3,       QT_TR_NOOP("Network Port (CN3)"),     false, false },
-        // { ui->lb_test_can_cn27,      QT_TR_NOOP("CAN Port (CN27)"),        true,  false },
-        { ui->lb_test_rs232_cn35_36, QT_TR_NOOP("RS232 (CN35/CN36)"),      false, true  },
-        { ui->lb_test_rs232_cn37_38, QT_TR_NOOP("RS232 (CN37/CN38)"),      false, false },
-        { ui->lb_test_th_cn40,       QT_TR_NOOP("Temp/Humidity (CN40)"),   false, false },
-        { ui->lb_test_light_cn44,    QT_TR_NOOP("Light Sensor (CN44)"),    false, false },
+        // { ui->lb_test_eth_cn3,       QT_TR_NOOP("Network Port (CN3)"),     false, false, false },
+        // { ui->lb_test_can_cn27,      QT_TR_NOOP("CAN Port (CN27)"),        true,  false, false },
+        { ui->lb_test_rs232_cn35_36, QT_TR_NOOP("RS232 (CN35/CN36)"),      false, true,  false },
+        { ui->lb_test_rs232_cn37_38, QT_TR_NOOP("RS232 (CN37/CN38)"),      false, false, true  },
+        { ui->lb_test_th_cn40,       QT_TR_NOOP("Temp/Humidity (CN40)"),   false, false, false },
+        { ui->lb_test_light_cn44,    QT_TR_NOOP("Light Sensor (CN44)"),    false, false, false },
     };
 
     for (const ExtraItem &item : items) {
@@ -2217,8 +2218,12 @@ void MainWnd::runExtraTests()
             runRs232Cn35Cn36Test();
             continue;
         }
+        if (item.isRs232Cn3738) {
+            runRs232Cn37Cn38Test();
+            continue;
+        }
 
-        // TODO: 网口 / RS232 CN37/38 / 温湿度 / 光敏
+        // TODO: 网口 / 温湿度 / 光敏
         item.edit->setStyleSheet("");
         item.edit->setText(QString());
     }
@@ -2255,18 +2260,11 @@ void MainWnd::runCanPortCn27Test()
     }
 }
 
-void MainWnd::runRs232Cn35Cn36Test()
+void MainWnd::applyRs232CrossTalkResult(QLineEdit *edit, const QString &logTag,
+                                        const Rs232CrossTalkResult &r)
 {
-    QLineEdit *edit = ui->lb_test_rs232_cn35_36;
-    edit->setStyleSheet("");
-    edit->clear();
-
-    // 接线：CN35 TX/RX ↔ CN36 RX/TX；走 m_rs232Serial 独立串口，不碰治具 m_serial
-    const Rs232CrossTalkResult r = m_rs232Serial.crossTalk(
-        QString::fromLatin1(Rs232PortTester::kDefaultCn35Port),
-        QString::fromLatin1(Rs232PortTester::kDefaultCn36Port),
-        Rs232PortTester::kDefaultBaudRate,
-        Rs232PortTester::kDefaultTimeoutMs);
+    if (!edit)
+        return;
 
     if (!r.detail.trimmed().isEmpty()) {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
@@ -2276,7 +2274,7 @@ void MainWnd::runRs232Cn35Cn36Test()
 #endif
         for (const QString &line : lines)
             ui->lb_test_cmd_excute_return_msg->appendPlainText(
-                tr("[RS232 CN35/CN36] %1").arg(line));
+                QStringLiteral("[%1] %2").arg(logTag, line));
     }
 
     if (r.ok) {
@@ -2285,6 +2283,36 @@ void MainWnd::runRs232Cn35Cn36Test()
     } else {
         setLabelFailed(edit);
     }
+}
+
+void MainWnd::runRs232Cn35Cn36Test()
+{
+    QLineEdit *edit = ui->lb_test_rs232_cn35_36;
+    edit->setStyleSheet("");
+    edit->clear();
+
+    // 接线：CN35 TX/RX ↔ CN36 RX/TX；ttyLP2/ttyLP7 @ 9600；走 m_rs232Serial，不碰 m_serial
+    const Rs232CrossTalkResult r = m_rs232Serial.crossTalk(
+        QString::fromLatin1(Rs232PortTester::kDefaultCn35Port),
+        QString::fromLatin1(Rs232PortTester::kDefaultCn36Port),
+        Rs232PortTester::kBaudCn35Cn36,
+        Rs232PortTester::kDefaultTimeoutMs);
+    applyRs232CrossTalkResult(edit, QStringLiteral("RS232 CN35/CN36"), r);
+}
+
+void MainWnd::runRs232Cn37Cn38Test()
+{
+    QLineEdit *edit = ui->lb_test_rs232_cn37_38;
+    edit->setStyleSheet("");
+    edit->clear();
+
+    // 接线：CN37 TX/RX ↔ CN38 RX/TX；ttyLP3/ttyLP5 @ 115200；走 m_rs232Serial，不碰 m_serial
+    const Rs232CrossTalkResult r = m_rs232Serial.crossTalk(
+        QString::fromLatin1(Rs232PortTester::kDefaultCn37Port),
+        QString::fromLatin1(Rs232PortTester::kDefaultCn38Port),
+        Rs232PortTester::kBaudCn37Cn38,
+        Rs232PortTester::kDefaultTimeoutMs);
+    applyRs232CrossTalkResult(edit, QStringLiteral("RS232 CN37/CN38"), r);
 }
 
 void MainWnd::onSerialPortOpened(const QString &portName)

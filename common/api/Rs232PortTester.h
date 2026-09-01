@@ -7,28 +7,33 @@
 /** 两路 RS232 交叉互联后的互发自收结果。 */
 struct Rs232CrossTalkResult {
     bool ok = false;
-    QString summary; // 成功时简要结果，如 CN35↔CN36 OK
+    QString summary; // 成功时简要结果，如 ttyLP2↔ttyLP7 OK
     QString detail;  // 过程日志（打开口 / TX / RX / 错误）
 };
 
 /**
- * 本机双串口互发自收（CN35 TX↔CN36 RX，CN35 RX↔CN36 TX）。
+ * 本机双串口互发自收（TX↔RX 交叉接线）。
  * 自带独立 QSerialPort，不复用治具协议串口。
  */
 class Rs232PortTester
 {
 public:
-    static const int kDefaultBaudRate = 9600;
     static const int kDefaultTimeoutMs = 2000;
 
-    // 开发板上 CN35/CN36 默认设备名（不含 /dev/）
-    static const char *kDefaultCn35Port; // ttyLP2
-    static const char *kDefaultCn36Port; // ttyLP7
+    // CN35/CN36：ttyLP2 / ttyLP7 @ 9600
+    static const int kBaudCn35Cn36 = 9600;
+    static const char *kDefaultCn35Port;
+    static const char *kDefaultCn36Port;
+
+    // CN37/CN38：ttyLP3 / ttyLP5 @ 115200
+    static const int kBaudCn37Cn38 = 115200;
+    static const char *kDefaultCn37Port;
+    static const char *kDefaultCn38Port;
 
     Rs232CrossTalkResult crossTalk(
-        const QString &portA = QString(),
-        const QString &portB = QString(),
-        int baudRate = kDefaultBaudRate,
+        const QString &portA,
+        const QString &portB,
+        int baudRate,
         int timeoutMs = kDefaultTimeoutMs);
 
     void closePorts();
@@ -39,8 +44,8 @@ private:
     bool sendAndExpect(QSerialPort &tx, QSerialPort &rx, const QByteArray &payload,
                        int timeoutMs, QString *log);
 
-    QSerialPort m_rs232PortCn35;
-    QSerialPort m_rs232PortCn36;
+    QSerialPort m_rs232PortA;
+    QSerialPort m_rs232PortB;
 };
 
 #endif // RS232PORTTESTER_H

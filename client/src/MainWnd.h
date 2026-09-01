@@ -57,6 +57,9 @@ protected:
     void runExtraTests();
     void runCanPortCn27Test();
     void runRs232Cn35Cn36Test();
+    void runRs232Cn37Cn38Test();
+    void applyRs232CrossTalkResult(QLineEdit *edit, const QString &logTag,
+                                   const Rs232CrossTalkResult &r);
 
     QLineEdit* boardTestResultEdit(quint8 cmd) const;
     void clearBoardTestResultField(quint8 cmd);
@@ -219,7 +222,7 @@ private:
     QString connect_msg_;               // 记录串口连接信息
 
     SerialManager m_serial;             // 主界面串口（治具协议，独立于 RS232 互发）
-    Rs232PortTester m_rs232Serial;      // CN35/CN36 互发专用，不复用 m_serial
+    Rs232PortTester m_rs232Serial;      // RS232 互发专用（CN35/36、CN37/38），不复用 m_serial
     Protocol::ProtocolCodec m_codec;    // RS485 帧编解码（测试板协议）
     quint8 m_lastBoardQueryCmd = 0;     // 最近一次发送的治具查询命令
     QString m_lastBoardTxHex;           // 最近一次发送的治具报文（hex）
