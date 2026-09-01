@@ -1178,8 +1178,20 @@
         <translation>USB Port</translation>
     </message>
     <message>
+        <source>TF Card:</source>
+        <translation>TF Card:</translation>
+    </message>
+    <message>
+        <source>TF Card</source>
+        <translation>TF Card</translation>
+    </message>
+    <message>
         <source>[USB] %1</source>
         <translation>[USB] %1</translation>
+    </message>
+    <message>
+        <source>[TF] %1</source>
+        <translation>[TF] %1</translation>
     </message>
     <message>
         <source>[Additional Test] Start</source>

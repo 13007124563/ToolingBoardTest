@@ -965,6 +965,10 @@
         <translation>USB 口:</translation>
     </message>
     <message>
+        <source>TF Card:</source>
+        <translation>TF 卡:</translation>
+    </message>
+    <message>
         <source>Network Port (CN3)</source>
         <translation>网口 CN3</translation>
     </message>
@@ -993,6 +997,10 @@
         <translation>USB 口</translation>
     </message>
     <message>
+        <source>TF Card</source>
+        <translation>TF 卡</translation>
+    </message>
+    <message>
         <source>[Additional Test] Start</source>
         <translation>[新增测试] 开始</translation>
     </message>
@@ -1015,6 +1023,10 @@
     <message>
         <source>[USB] %1</source>
         <translation>[USB] %1</translation>
+    </message>
+    <message>
+        <source>[TF] %1</source>
+        <translation>[TF] %1</translation>
     </message>
     <message>
         <source>%1 (OK)</source>
