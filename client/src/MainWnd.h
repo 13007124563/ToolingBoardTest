@@ -9,6 +9,7 @@
 // 包含CSerialCommandWrapper以获取类型定义（Windows和Linux都需要）
 #include "CSerialCommandWrapper.h"
 #include "SerialManager.h"
+#include "Rs232PortTester.h"
 #include "protocol/protocolframe.h"
 
 #include "CommonType.h"
@@ -55,6 +56,7 @@ protected:
     void resetExtraTestResults();
     void runExtraTests();
     void runCanPortCn27Test();
+    void runRs232Cn35Cn36Test();
 
     QLineEdit* boardTestResultEdit(quint8 cmd) const;
     void clearBoardTestResultField(quint8 cmd);
@@ -216,7 +218,8 @@ private:
 
     QString connect_msg_;               // 记录串口连接信息
 
-    SerialManager m_serial;             // 主界面串口（QSerialPort，独立于 CSerialCommandWrapper）
+    SerialManager m_serial;             // 主界面串口（治具协议，独立于 RS232 互发）
+    Rs232PortTester m_rs232Serial;      // CN35/CN36 互发专用，不复用 m_serial
     Protocol::ProtocolCodec m_codec;    // RS485 帧编解码（测试板协议）
     quint8 m_lastBoardQueryCmd = 0;     // 最近一次发送的治具查询命令
     QString m_lastBoardTxHex;           // 最近一次发送的治具报文（hex）

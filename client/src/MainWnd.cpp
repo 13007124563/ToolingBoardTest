@@ -22,6 +22,7 @@
 #include "protocol/responseparser.h"
 #include "protocol/protocolconstants.h"
 #include "CanPortTester.h"
+#include "Rs232PortTester.h"
 
 #include <QProcess>
 #include <QFile>
@@ -2191,15 +2192,16 @@ void MainWnd::runExtraTests()
         QLineEdit *edit;
         const char *label;
         bool isCan;
+        bool isRs232Cn3536;
     };
     const ExtraItem items[] = {
         // 暂不测：网口 CN3 / CAN 口 CN27
-        // { ui->lb_test_eth_cn3,       QT_TR_NOOP("Network Port (CN3)"),     false },
-        // { ui->lb_test_can_cn27,      QT_TR_NOOP("CAN Port (CN27)"),        true  },
-        { ui->lb_test_rs232_cn35_36, QT_TR_NOOP("RS232 (CN35/CN36)"),      false },
-        { ui->lb_test_rs232_cn37_38, QT_TR_NOOP("RS232 (CN37/CN38)"),      false },
-        { ui->lb_test_th_cn40,       QT_TR_NOOP("Temp/Humidity (CN40)"),   false },
-        { ui->lb_test_light_cn44,    QT_TR_NOOP("Light Sensor (CN44)"),    false },
+        // { ui->lb_test_eth_cn3,       QT_TR_NOOP("Network Port (CN3)"),     false, false },
+        // { ui->lb_test_can_cn27,      QT_TR_NOOP("CAN Port (CN27)"),        true,  false },
+        { ui->lb_test_rs232_cn35_36, QT_TR_NOOP("RS232 (CN35/CN36)"),      false, true  },
+        { ui->lb_test_rs232_cn37_38, QT_TR_NOOP("RS232 (CN37/CN38)"),      false, false },
+        { ui->lb_test_th_cn40,       QT_TR_NOOP("Temp/Humidity (CN40)"),   false, false },
+        { ui->lb_test_light_cn44,    QT_TR_NOOP("Light Sensor (CN44)"),    false, false },
     };
 
     for (const ExtraItem &item : items) {
@@ -2211,8 +2213,12 @@ void MainWnd::runExtraTests()
             runCanPortCn27Test();
             continue;
         }
+        if (item.isRs232Cn3536) {
+            runRs232Cn35Cn36Test();
+            continue;
+        }
 
-        // TODO: 网口 / RS232 / 温湿度 / 光敏
+        // TODO: 网口 / RS232 CN37/38 / 温湿度 / 光敏
         item.edit->setStyleSheet("");
         item.edit->setText(QString());
     }
@@ -2244,6 +2250,38 @@ void MainWnd::runCanPortCn27Test()
     if (r.ok) {
         edit->setStyleSheet("");
         edit->setText(tr("%1 (OK)").arg(r.version));
+    } else {
+        setLabelFailed(edit);
+    }
+}
+
+void MainWnd::runRs232Cn35Cn36Test()
+{
+    QLineEdit *edit = ui->lb_test_rs232_cn35_36;
+    edit->setStyleSheet("");
+    edit->clear();
+
+    // 接线：CN35 TX/RX ↔ CN36 RX/TX；走 m_rs232Serial 独立串口，不碰治具 m_serial
+    const Rs232CrossTalkResult r = m_rs232Serial.crossTalk(
+        QString::fromLatin1(Rs232PortTester::kDefaultCn35Port),
+        QString::fromLatin1(Rs232PortTester::kDefaultCn36Port),
+        Rs232PortTester::kDefaultBaudRate,
+        Rs232PortTester::kDefaultTimeoutMs);
+
+    if (!r.detail.trimmed().isEmpty()) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+        const QStringList lines = r.detail.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+#else
+        const QStringList lines = r.detail.split(QLatin1Char('\n'), QString::SkipEmptyParts);
+#endif
+        for (const QString &line : lines)
+            ui->lb_test_cmd_excute_return_msg->appendPlainText(
+                tr("[RS232 CN35/CN36] %1").arg(line));
+    }
+
+    if (r.ok) {
+        edit->setStyleSheet("");
+        edit->setText(tr("%1 (OK)").arg(r.summary));
     } else {
         setLabelFailed(edit);
     }

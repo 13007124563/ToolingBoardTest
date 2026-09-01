@@ -1182,6 +1182,14 @@
         <translation>[Additional Test] Done</translation>
     </message>
     <message>
+        <source>[RS232 CN35/CN36] %1</source>
+        <translation>[RS232 CN35/CN36] %1</translation>
+    </message>
+    <message>
+        <source>%1 (OK)</source>
+        <translation>%1 (OK)</translation>
+    </message>
+    <message>
         <source>No query command selected</source>
         <translation>No query command selected</translation>
     </message>
