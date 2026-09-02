@@ -73,6 +73,12 @@ bool isValueInRange(double tempC, double humiPct)
         && humiPct >= 0.0 && humiPct <= 100.0;
 }
 
+// 传感器未接好/无有效采样时，工具常回传 T:0.0 H:0.0，应判失败
+bool isNoSensorData(double tempC, double humiPct)
+{
+    return qAbs(tempC) < 0.05 && qAbs(humiPct) < 0.05;
+}
+
 } // namespace
 
 ThCn40TestResult ThCn40Tester::readSensor()
@@ -132,6 +138,16 @@ ThCn40TestResult ThCn40Tester::readSensor()
 
     result.temperatureC = tempC;
     result.humidityPct = humiPct;
+
+    if (isNoSensorData(tempC, humiPct)) {
+        result.ok = false;
+        result.summary = QStringLiteral("T:%1°C H:%2%")
+                             .arg(tempC, 0, 'f', 1)
+                             .arg(humiPct, 0, 'f', 1);
+        result.detail += QStringLiteral(
+            "No sensor data (T and H are both 0.0) -> FAIL\n");
+        return result;
+    }
 
     if (!isValueInRange(tempC, humiPct)) {
         result.summary = QStringLiteral("CN40 FAIL (out of range)");

@@ -2622,6 +2622,10 @@ void MainWnd::runThCn40Test()
     if (r.ok) {
         edit->setStyleSheet("");
         edit->setText(tr("%1 (OK)").arg(r.summary));
+    } else if (r.summary.startsWith(QStringLiteral("T:"))) {
+        // 无有效读数（如 T:0.0 H:0.0）时保留数值并标红失败
+        edit->setStyleSheet(QStringLiteral("color: red;"));
+        edit->setText(tr("%1 (FAIL)").arg(r.summary));
     } else {
         setLabelFailed(edit);
     }
