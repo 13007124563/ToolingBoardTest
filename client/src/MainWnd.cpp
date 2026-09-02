@@ -1147,21 +1147,25 @@ void MainWnd::showOneClickTestSummary()
     if (cols == 1) {
         detail = failed.join(QLatin1Char('\n'));
     } else {
-        // HTML 表格：按列填充（先填满左列再右列），便于对齐
+        // HTML 表格：整体居中；单元格内文字居中
         detail = QStringLiteral(
-            "<table width=\"100%\" cellspacing=\"2\" cellpadding=\"1\">");
+            "<div align=\"center\">"
+            "<table align=\"center\" cellspacing=\"6\" cellpadding=\"2\">");
         for (int r = 0; r < rows; ++r) {
             detail += QStringLiteral("<tr>");
             for (int c = 0; c < cols; ++c) {
                 const int idx = c * rows + r;
-                detail += QStringLiteral("<td align=\"left\" valign=\"middle\">");
+                detail += QStringLiteral(
+                    "<td align=\"center\" valign=\"middle\" style=\"padding:2px 14px;\">");
                 if (idx < n)
                     detail += failed.at(idx).toHtmlEscaped();
+                else
+                    detail += QStringLiteral("&nbsp;");
                 detail += QStringLiteral("</td>");
             }
             detail += QStringLiteral("</tr>");
         }
-        detail += QStringLiteral("</table>");
+        detail += QStringLiteral("</table></div>");
     }
     MsgWnd::ShowNormalInfo(title, detail);
     ui->lb_test_cmd_excute_return_msg->appendPlainText(
