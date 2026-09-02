@@ -1029,6 +1029,10 @@
         <translation>[TF] %1</translation>
     </message>
     <message>
+        <source>[CN40] %1</source>
+        <translation>[CN40] %1</translation>
+    </message>
+    <message>
         <source>%1 (OK)</source>
         <translation>%1 (OK)</translation>
     </message>

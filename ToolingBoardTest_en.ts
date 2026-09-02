@@ -1194,6 +1194,10 @@
         <translation>[TF] %1</translation>
     </message>
     <message>
+        <source>[CN40] %1</source>
+        <translation>[CN40] %1</translation>
+    </message>
+    <message>
         <source>[Additional Test] Start</source>
         <translation>[Additional Test] Start</translation>
     </message>

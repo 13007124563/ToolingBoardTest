@@ -60,6 +60,7 @@ protected:
     void runRs232Cn37Cn38Test();
     void runUsbPortTest();
     void runTfCardTest();
+    void runThCn40Test();
     void applyRs232CrossTalkResult(QLineEdit *edit, const QString &logTag,
                                    const Rs232CrossTalkResult &r);
 
