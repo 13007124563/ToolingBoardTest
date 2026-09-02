@@ -334,12 +334,9 @@ void MainWnd::resetBoardTestResults()
 void MainWnd::resetExtraTestResults()
 {
     QLineEdit *const edits[] = {
-        ui->lb_test_eth_cn3,
-        ui->lb_test_can_cn27,
         ui->lb_test_rs232_cn35_36,
         ui->lb_test_rs232_cn37_38,
         ui->lb_test_th_cn40,
-        ui->lb_test_light_cn44,
         ui->lb_test_usb,
         ui->lb_test_tf,
     };
@@ -2212,7 +2209,7 @@ void MainWnd::runExtraTests()
         { ui->lb_test_usb,           QT_TR_NOOP("USB Port"),               false, false, false, true,  false, false },
         { ui->lb_test_tf,            QT_TR_NOOP("TF Card"),                false, false, false, false, true,  false },
         { ui->lb_test_th_cn40,       QT_TR_NOOP("Temp/Humidity (CN40)"),   false, false, false, false, false, true  },
-        { ui->lb_test_light_cn44,    QT_TR_NOOP("Light Sensor (CN44)"),    false, false, false, false, false, false },
+        // { ui->lb_test_light_cn44,    QT_TR_NOOP("Light Sensor (CN44)"),    false, false, false, false, false, false },
     };
 
     for (const ExtraItem &item : items) {
@@ -2245,7 +2242,7 @@ void MainWnd::runExtraTests()
             continue;
         }
 
-        // TODO: 网口 / 光敏
+        // TODO: 网口 CN3 / CAN CN27 / 光敏 CN44
         item.edit->setStyleSheet("");
         item.edit->setText(QString());
     }
