@@ -27,6 +27,7 @@
 #include "TfCardTester.h"
 #include "ThCn40Tester.h"
 #include "BacklightTester.h"
+#include "AudioCn22Tester.h"
 
 #include <QProcess>
 #include <QFile>
@@ -43,6 +44,7 @@
 #include <QSizePolicy>
 #include <QComboBox>
 #include <QEvent>
+#include <QMessageBox>
 
 // 测试执行中半透明遮罩小工具类
 class TestProgressWidget : public QWidget {
@@ -341,6 +343,7 @@ void MainWnd::resetExtraTestResults()
         ui->lb_test_usb,
         ui->lb_test_tf,
         ui->lb_test_backlight,
+        ui->lb_test_audio_cn22,
     };
     for (QLineEdit *edit : edits) {
         edit->clear();
@@ -2235,18 +2238,20 @@ void MainWnd::runExtraTests()
         bool isTf;
         bool isThCn40;
         bool isBacklight;
+        bool isAudioCn22;
     };
     const ExtraItem items[] = {
         // 暂不测：网口 CN3 / CAN 口 CN27
-        // { ui->lb_test_eth_cn3,       QT_TR_NOOP("Network Port (CN3)"),     false, false, false, false, false, false },
-        // { ui->lb_test_can_cn27,      QT_TR_NOOP("CAN Port (CN27)"),        true,  false, false, false, false, false },
-        { ui->lb_test_rs232_cn35_36, QT_TR_NOOP("RS232 (CN35/CN36)"),      false, true,  false, false, false, false, false },
-        { ui->lb_test_rs232_cn37_38, QT_TR_NOOP("RS232 (CN37/CN38)"),      false, false, true,  false, false, false, false },
-        { ui->lb_test_usb,           QT_TR_NOOP("USB Port"),               false, false, false, true,  false, false, false },
-        { ui->lb_test_tf,            QT_TR_NOOP("TF Card"),                false, false, false, false, true,  false, false },
-        { ui->lb_test_th_cn40,       QT_TR_NOOP("Temp/Humidity (CN40)"),   false, false, false, false, false, true,  false },
-        { ui->lb_test_backlight,     QT_TR_NOOP("Backlight"),              false, false, false, false, false, false, true  },
-        // { ui->lb_test_light_cn44,    QT_TR_NOOP("Light Sensor (CN44)"),    false, false, false, false, false, false, false },
+        // { ui->lb_test_eth_cn3,       QT_TR_NOOP("Network Port (CN3)"),     false, false, false, false, false, false, false, false },
+        // { ui->lb_test_can_cn27,      QT_TR_NOOP("CAN Port (CN27)"),        true,  false, false, false, false, false, false, false },
+        { ui->lb_test_rs232_cn35_36, QT_TR_NOOP("RS232 (CN35/CN36)"),      false, true,  false, false, false, false, false, false },
+        { ui->lb_test_rs232_cn37_38, QT_TR_NOOP("RS232 (CN37/CN38)"),      false, false, true,  false, false, false, false, false },
+        { ui->lb_test_usb,           QT_TR_NOOP("USB Port"),               false, false, false, true,  false, false, false, false },
+        { ui->lb_test_tf,            QT_TR_NOOP("TF Card"),                false, false, false, false, true,  false, false, false },
+        { ui->lb_test_th_cn40,       QT_TR_NOOP("Temp/Humidity (CN40)"),   false, false, false, false, false, true,  false, false },
+        { ui->lb_test_backlight,     QT_TR_NOOP("Backlight"),              false, false, false, false, false, false, true,  false },
+        { ui->lb_test_audio_cn22,    QT_TR_NOOP("Audio (CN22)"),           false, false, false, false, false, false, false, true  },
+        // { ui->lb_test_light_cn44,    QT_TR_NOOP("Light Sensor (CN44)"),    false, false, false, false, false, false, false, false },
     };
 
     for (const ExtraItem &item : items) {
@@ -2280,6 +2285,10 @@ void MainWnd::runExtraTests()
         }
         if (item.isBacklight) {
             runBacklightTest();
+            continue;
+        }
+        if (item.isAudioCn22) {
+            runAudioCn22Test();
             continue;
         }
 
@@ -2502,6 +2511,62 @@ void MainWnd::runBacklightTest()
     saveExtraTestRecord(QStringLiteral("Backlight"),
                         r.ok ? r.summary : tr("Test failed"),
                         r.detail, r.ok);
+}
+
+void MainWnd::runAudioCn22Test()
+{
+    QLineEdit *edit = ui->lb_test_audio_cn22;
+    edit->setStyleSheet("");
+    edit->clear();
+
+    const AudioCn22TestResult r = AudioCn22Tester::runPlayback();
+
+    if (!r.detail.trimmed().isEmpty()) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+        const QStringList lines = r.detail.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+#else
+        const QStringList lines = r.detail.split(QLatin1Char('\n'), QString::SkipEmptyParts);
+#endif
+        for (const QString &line : lines)
+            ui->lb_test_cmd_excute_return_msg->appendPlainText(
+                tr("[Audio CN22] %1").arg(line));
+    }
+
+    if (!r.playbackOk) {
+        setLabelFailed(edit);
+        saveExtraTestRecord(QStringLiteral("Audio (CN22)"),
+                            r.summary.isEmpty() ? tr("Test failed") : r.summary,
+                            r.detail, false);
+        return;
+    }
+
+    const bool isCn = (APPMODEL()->CabinetLanguage() == zl::ELanguageType_Cn);
+    const QString title = isCn ? QStringLiteral("音频测试 CN22") : QStringLiteral("Audio Test CN22");
+    const QString question = isCn
+        ? QStringLiteral("请确认 CN22 接口接入的喇叭是否听到播放声音？")
+        : QStringLiteral("Did you hear audio from the speaker connected to CN22?");
+    const int answer = QMessageBox::question(
+        this, title, question,
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::NoButton);
+
+    const bool userOk = (answer == QMessageBox::Yes);
+    ui->lb_test_cmd_excute_return_msg->appendPlainText(
+        userOk ? tr("[Audio CN22] User confirmed: pass")
+               : tr("[Audio CN22] User confirmed: fail"));
+
+    if (userOk) {
+        edit->setStyleSheet("");
+        edit->setText(tr("%1 (OK)").arg(r.summary));
+    } else {
+        setLabelFailed(edit);
+    }
+
+    saveExtraTestRecord(QStringLiteral("Audio (CN22)"),
+                        userOk ? r.summary : tr("Test failed"),
+                        r.detail + (userOk
+                            ? QStringLiteral("\nUser confirmed: PASS\n")
+                            : QStringLiteral("\nUser confirmed: FAIL\n")),
+                        userOk);
 }
 
 void MainWnd::onSerialPortOpened(const QString &portName)

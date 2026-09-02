@@ -989,6 +989,10 @@
         <translation>背光调节:</translation>
     </message>
     <message>
+        <source>Audio (CN22):</source>
+        <translation>音频接口 CN22:</translation>
+    </message>
+    <message>
         <source>Network Port (CN3)</source>
         <translation>网口 CN3</translation>
     </message>
@@ -1025,6 +1029,10 @@
         <translation>背光调节</translation>
     </message>
     <message>
+        <source>Audio (CN22)</source>
+        <translation>音频接口 CN22</translation>
+    </message>
+    <message>
         <source>[Additional Test] Start</source>
         <translation>[新增测试] 开始</translation>
     </message>
@@ -1059,6 +1067,18 @@
     <message>
         <source>[Backlight] %1</source>
         <translation>[背光] %1</translation>
+    </message>
+    <message>
+        <source>[Audio CN22] %1</source>
+        <translation>[音频 CN22] %1</translation>
+    </message>
+    <message>
+        <source>[Audio CN22] User confirmed: pass</source>
+        <translation>[音频 CN22] 用户确认：通过</translation>
+    </message>
+    <message>
+        <source>[Audio CN22] User confirmed: fail</source>
+        <translation>[音频 CN22] 用户确认：失败</translation>
     </message>
     <message>
         <source>Backlight Test</source>

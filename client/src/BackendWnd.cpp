@@ -1805,6 +1805,7 @@ void BackendWnd::init_extra_page_combo_normal()
         { "TF Card", "TF 卡", "TF Card" },
         { "Temp/Humidity (CN40)", "温湿度 (CN40)", "Temp/Humidity (CN40)" },
         { "Backlight", "背光调节", "Backlight" },
+        { "Audio (CN22)", "音频 (CN22)", "Audio (CN22)" },
     };
     for (const TypeItem &item : items) {
         ui->combo_extra_record_type->addItem(
@@ -1881,6 +1882,8 @@ void BackendWnd::on_btn_extra_record_query_clicked()
             return isCn ? QStringLiteral("温湿度 (CN40)") : key;
         if (key == QStringLiteral("Backlight"))
             return isCn ? QStringLiteral("背光调节") : key;
+        if (key == QStringLiteral("Audio (CN22)"))
+            return isCn ? QStringLiteral("音频 (CN22)") : key;
         return key.isEmpty() ? QStringLiteral("-") : key;
     };
 

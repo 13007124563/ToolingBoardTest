@@ -62,6 +62,7 @@ protected:
     void runTfCardTest();
     void runThCn40Test();
     void runBacklightTest();
+    void runAudioCn22Test();
     void applyRs232CrossTalkResult(QLineEdit *edit, const QString &logTag,
                                    const Rs232CrossTalkResult &r);
     void saveExtraTestRecord(const QString &typeLabel, const QString &summary,
