@@ -660,6 +660,21 @@
 <context>
     <name>MainWnd</name>
     <message>
+        <location filename="client/src/MainWnd.ui" line="396"/>
+        <source>新增测试</source>
+        <translation>Additional Test</translation>
+    </message>
+    <message>
+        <location filename="client/src/MainWnd.ui" line="393"/>
+        <source>IOT测试</source>
+        <translation>IOT Test</translation>
+    </message>
+    <message>
+        <location filename="client/src/MainWnd.ui" line="391"/>
+        <source>一键测试</source>
+        <translation>One-Click Test</translation>
+    </message>
+    <message>
         <location filename="client/src/MainWnd.cpp" line="254"/>
         <source>Sim card test needs few minutes</source>
         <translation type="unfinished"></translation>
@@ -1029,6 +1044,11 @@
         <location filename="client/src/MainWnd.ui" line="252"/>
         <source>Image Version</source>
         <translation>Image Version</translation>
+    </message>
+    <message>
+        <location filename="client/src/MainWnd.ui" line="391"/>
+        <source>One-Click Test</source>
+        <translation>One-Click Test</translation>
     </message>
     <message>
         <location filename="client/src/MainWnd.ui" line="253"/>

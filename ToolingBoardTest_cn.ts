@@ -820,6 +820,21 @@
 <context>
     <name>MainWnd</name>
     <message>
+        <location filename="client/src/MainWnd.ui" line="396"/>
+        <source>新增测试</source>
+        <translation>新增测试</translation>
+    </message>
+    <message>
+        <location filename="client/src/MainWnd.ui" line="393"/>
+        <source>IOT测试</source>
+        <translation>IOT测试</translation>
+    </message>
+    <message>
+        <location filename="client/src/MainWnd.ui" line="391"/>
+        <source>一键测试</source>
+        <translation>一键测试</translation>
+    </message>
+    <message>
         <location filename="client/src/MainWnd.ui" line="216"/>
         <source>Module Type:</source>
         <translation>模块类型:</translation>

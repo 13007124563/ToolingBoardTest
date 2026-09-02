@@ -131,6 +131,18 @@ RESOURCES += \
 TRANSLATIONS += ToolingBoardTest_cn.ts \
                 ToolingBoardTest_en.ts
 
+# 构建前用 lrelease 生成资源目录下的 .qm（不改业务代码；翻译进 qrc）
+LRELEASE_BIN = $$[QT_INSTALL_BINS]/lrelease
+win32: LRELEASE_BIN = $$[QT_INSTALL_BINS]\\lrelease.exe
+cn_qm.target = $$PWD/client/res/ToolingBoardTest_cn.qm
+cn_qm.depends = $$PWD/ToolingBoardTest_cn.ts
+cn_qm.commands = $$quote($$LRELEASE_BIN) $$PWD/ToolingBoardTest_cn.ts -qm $$PWD/client/res/ToolingBoardTest_cn.qm
+en_qm.target = $$PWD/client/res/ToolingBoardTest_en.qm
+en_qm.depends = $$PWD/ToolingBoardTest_en.ts
+en_qm.commands = $$quote($$LRELEASE_BIN) $$PWD/ToolingBoardTest_en.ts -qm $$PWD/client/res/ToolingBoardTest_en.qm
+QMAKE_EXTRA_TARGETS += cn_qm en_qm
+PRE_TARGETDEPS += $$PWD/client/res/ToolingBoardTest_cn.qm $$PWD/client/res/ToolingBoardTest_en.qm
+
 # Platform-specific libraries
 unix {
     LIBS += -lpthread

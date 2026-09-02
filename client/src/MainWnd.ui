@@ -388,12 +388,12 @@ QComboBox::down-arrow {
              </spacer>
          </item>
          
-         <item><widget class="QPushButton" name="btn_nor_one_click_test"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>One-Click Test</string></property></widget></item>
+         <item><widget class="QPushButton" name="btn_nor_one_click_test"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>一键测试</string></property></widget></item>
          <item><widget class="QPushButton" name="btn_nor_version"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Image Version</string></property></widget></item>
-         <item><widget class="QPushButton" name="btn_nor_all_test"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>IOT Test</string></property></widget></item>
+         <item><widget class="QPushButton" name="btn_nor_all_test"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>IOT测试</string></property></widget></item>
          
          <item><widget class="QPushButton" name="btn_query_board_version"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Send Query</string></property></widget></item>
-         <item><widget class="QPushButton" name="btn_nor_extra_test"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Additional Test</string></property></widget></item>
+         <item><widget class="QPushButton" name="btn_nor_extra_test"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>新增测试</string></property></widget></item>
          <item><widget class="QPushButton" name="btn_nor_record"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Test Record</string></property></widget></item>
          <item><widget class="QPushButton" name="btn_nor_clear"><property name="minimumSize"><size><width>0</width><height>50</height></size></property><property name="text"><string>Clear Test Result</string></property></widget></item>
             </layout>
