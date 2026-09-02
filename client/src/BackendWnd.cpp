@@ -124,9 +124,11 @@ BackendWnd::BackendWnd(QWidget *parent) :
   , model_sim_record_result_(new QStandardItemModel)
   , model_iot_record_result_(new QStandardItemModel)
   , model_serial_record_result_(new QStandardItemModel)
+  , model_extra_record_result_(new QStandardItemModel)
   , sim_header_checkbox_(nullptr)
   , iot_header_checkbox_(nullptr)
   , serial_header_checkbox_(nullptr)
+  , extra_header_checkbox_(nullptr)
   , completer_sim_page_sim_iccid(new QCompleter(this))
   , completer_sim_page_firmware_version(new QCompleter(this))
   , completer_iot_page_iot_module_id(new QCompleter(this))
@@ -186,6 +188,12 @@ BackendWnd::~BackendWnd()
         model_serial_record_result_ = Q_NULLPTR;
     }
 
+    if (model_extra_record_result_)
+    {
+        delete model_extra_record_result_;
+        model_extra_record_result_ = Q_NULLPTR;
+    }
+
     delete ui;
 }
 
@@ -198,6 +206,7 @@ void BackendWnd::lang_change()
     init_sim_page_combo_normal();
     init_iot_page_combo_normal();
     init_serial_page_combo_normal();
+    init_extra_page_combo_normal();
 }
 
 void BackendWnd::ShowBackendPage()
@@ -388,6 +397,52 @@ void BackendWnd::init_table_view()
     serial_header_checkbox_->raise();
 
     qDebug() << "[DEBUG] Serial table initialized with columns:" << list_serial_record;
+
+    // 新增测试记录查询结果列表
+    QStringList list_extra_record = { "", tr("Serial Number"), tr("Test Type"), tr("Test Result"), tr("Test Time"), tr("Operation")};
+    if (isCn) {
+        list_extra_record = QStringList() << "" << QStringLiteral("流水号") << QStringLiteral("测试类型")
+                                          << QStringLiteral("测试结果") << QStringLiteral("测试时间") << QStringLiteral("操作");
+    }
+    QVector<int> widths_extra_record = {50, 190, 200, 280, 200, 90};
+
+    TableHelper::initTableHeader(list_extra_record, widths_extra_record, model_extra_record_result_, ui->tb_extra_record_result);
+
+    ui->tb_extra_record_result->setSelectionMode(QAbstractItemView::NoSelection);
+    ui->tb_extra_record_result->horizontalHeader()->setFixedHeight(40);
+    ui->tb_extra_record_result->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
+    ui->tb_extra_record_result->horizontalHeader()->setSectionResizeMode(5, QHeaderView::Fixed);
+    ui->tb_extra_record_result->horizontalHeader()->resizeSection(5, 90);
+    ui->tb_extra_record_result->verticalHeader()->setVisible(false);
+    ui->tb_extra_record_result->setItemDelegateForColumn(0, new CheckboxDelegate(this));
+    ui->tb_extra_record_result->setStyleSheet("");
+
+    if (!extra_header_checkbox_) {
+        qDebug() << "[DEBUG] Extra header checkbox created (first init)";
+        extra_header_checkbox_ = new QCheckBox(ui->tb_extra_record_result->horizontalHeader());
+        extra_header_checkbox_->setGeometry(15, 11, 25, 25);
+        extra_header_checkbox_->setStyleSheet(
+            "QCheckBox::indicator { "
+            "   width: 18px; "
+            "   height: 18px; "
+            "   border: 2px solid #999999; "
+            "   background-color: #FFFFFF; "
+            "   border-radius: 3px; "
+            "} "
+            "QCheckBox::indicator:checked { "
+            "   background-color: #005FA7; "
+            "   border: 2px solid #005FA7; "
+            "} "
+            "QCheckBox::indicator:hover { "
+            "   border: 2px solid #005FA7; "
+            "}"
+        );
+        connect(extra_header_checkbox_, &QCheckBox::clicked, this, &BackendWnd::on_extra_header_checkbox_clicked);
+    }
+    extra_header_checkbox_->show();
+    extra_header_checkbox_->raise();
+
+    qDebug() << "[DEBUG] Extra table initialized with columns:" << list_extra_record;
 }
 
 
@@ -417,6 +472,7 @@ void BackendWnd::init_record_page()
     btnGpRecordSel->addButton(ui->btn_navi_sim, 0);
     btnGpRecordSel->addButton(ui->btn_navi_iot, 1);
     btnGpRecordSel->addButton(ui->btn_navi_serial, 2);
+    btnGpRecordSel->addButton(ui->btn_navi_extra, 3);
 
     // Qt 6 只支持 idClicked, Qt 5.15+ 也支持 idClicked
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
@@ -461,6 +517,13 @@ void BackendWnd::init_record_page()
             on_tb_serial_record_result_doubleClicked(index);
         }
     });
+
+    // 连接新增测试表格单击事件，支持点击"查看报告"列
+    connect(ui->tb_extra_record_result, &QTableView::clicked, this, [this](const QModelIndex& index) {
+        if (index.isValid() && index.column() == 5) {
+            on_tb_extra_record_result_doubleClicked(index);
+        }
+    });
     
     // Default
     ui->btn_navi_sim->click();
@@ -475,6 +538,8 @@ void BackendWnd::init_record_page()
     init_iot_page_time_select();
     init_serial_page_time_select();
     init_serial_page_combo_normal();
+    init_extra_page_time_select();
+    init_extra_page_combo_normal();
 }
 
 
@@ -657,6 +722,9 @@ void BackendWnd::event_navi_btn_clicked(int index)
     } else if (index == 2) {
         qDebug() << "[DEBUG] Serial table column count:" << model_serial_record_result_->columnCount();
         qDebug() << "[DEBUG] Serial table row count:" << model_serial_record_result_->rowCount();
+    } else if (index == 3) {
+        qDebug() << "[DEBUG] Extra table column count:" << model_extra_record_result_->columnCount();
+        qDebug() << "[DEBUG] Extra table row count:" << model_extra_record_result_->rowCount();
     }
 }
 
@@ -1126,6 +1194,8 @@ void BackendWnd::event_user_confirm(const QString& token)
         on_btn_sim_record_query_clicked();
     else if (pending_delete_type_ == "iot")
         on_btn_iot_record_query_clicked();
+    else if (pending_delete_type_ == "extra")
+        on_btn_extra_record_query_clicked();
     else
         on_btn_serial_record_query_clicked();
 
@@ -1701,5 +1771,323 @@ void BackendWnd::on_serial_header_checkbox_clicked(bool checked)
         if (item && item->isCheckable()) {
             item->setCheckState(checked ? Qt::Checked : Qt::Unchecked);
         }
+    }
+}
+
+void BackendWnd::init_extra_page_time_select()
+{
+    QDateTime today = QDateTime::currentDateTime();
+    today.setTime(QTime(0, 0, 0));
+    ui->edt_extra_record_begin_date->setDateTime(today);
+    ui->edt_extra_record_end_date->setDateTime(today.addDays(1));
+}
+
+void BackendWnd::init_extra_page_combo_normal()
+{
+    const bool isCn = (APPMODEL()->CabinetLanguage() == zl::ELanguageType_Cn);
+
+    ui->btn_navi_extra->setText(isCn ? QStringLiteral("新增测试") : QStringLiteral("Additional Test"));
+    ui->lb_extra_record_type->setText(isCn ? QStringLiteral("测试类型:") : QStringLiteral("Test Type:"));
+    ui->lb_extra_record_result->setText(isCn ? QStringLiteral("测试结果:") : QStringLiteral("Test Result:"));
+
+    ui->combo_extra_record_type->clear();
+    ui->combo_extra_record_type->addItem(isCn ? QStringLiteral("全部") : QStringLiteral("All"), QString());
+
+    struct TypeItem {
+        const char *key;
+        const char *labelCn;
+        const char *labelEn;
+    };
+    static const TypeItem items[] = {
+        { "RS232 (CN35/CN36)", "RS232 (CN35/CN36)", "RS232 (CN35/CN36)" },
+        { "RS232 (CN37/CN38)", "RS232 (CN37/CN38)", "RS232 (CN37/CN38)" },
+        { "USB Port", "USB 口", "USB Port" },
+        { "TF Card", "TF 卡", "TF Card" },
+        { "Temp/Humidity (CN40)", "温湿度 (CN40)", "Temp/Humidity (CN40)" },
+        { "Backlight", "背光调节", "Backlight" },
+    };
+    for (const TypeItem &item : items) {
+        ui->combo_extra_record_type->addItem(
+            isCn ? QString::fromUtf8(item.labelCn) : QString::fromLatin1(item.labelEn),
+            QString::fromLatin1(item.key));
+    }
+
+    ui->combo_extra_record_result->clear();
+    ui->combo_extra_record_result->addItem(isCn ? QStringLiteral("全部") : QStringLiteral("All"), -1);
+    ui->combo_extra_record_result->addItem(isCn ? QStringLiteral("成功") : QStringLiteral("Success"), 1);
+    ui->combo_extra_record_result->addItem(isCn ? QStringLiteral("失败") : QStringLiteral("Failure"), 0);
+}
+
+void BackendWnd::on_btn_extra_record_query_clicked()
+{
+    QDate beginDate = ui->edt_extra_record_begin_date->date();
+    QDate endDateExclusive = ui->edt_extra_record_end_date->date().addDays(1);
+    QString begdt = beginDate.toString("yyyy-MM-dd") + " 00:00:00";
+    QString enddt = endDateExclusive.toString("yyyy-MM-dd") + " 00:00:00";
+
+    ETestType test_type = ETestType_Extra;
+
+    const QString selectedType = ui->combo_extra_record_type->currentData().toString();
+    const int selectedResult = ui->combo_extra_record_result->currentData().toInt();
+
+    extra_record_vec_.clear();
+
+    int32_t ret = zl::TestRecordManager::getInstance()->GetAllRecord(
+        extra_record_vec_,
+        begdt,
+        enddt,
+        test_type,
+        zl::EResultType_Unknow,
+        zl::ESimNetStatus_Unknow,
+        "",
+        "",
+        "",
+        "",
+        "");
+
+    if (ret != zl::EResult_Success)
+    {
+        MsgWnd::ShowNormalInfo(QObject::tr("Query Additional Test Record Failed"));
+        return;
+    }
+
+    if (!selectedType.isEmpty() || selectedResult >= 0) {
+        zl::RecordVec filtered;
+        for (const zl::RecordInfo &record : extra_record_vec_) {
+            if (!selectedType.isEmpty()) {
+                if (record.cmd_ret_info.trimmed() != selectedType)
+                    continue;
+            }
+            if (selectedResult == 1) {
+                if (record.result_type != zl::EResultType_Success)
+                    continue;
+            } else if (selectedResult == 0) {
+                if (record.result_type == zl::EResultType_Success)
+                    continue;
+            }
+            filtered.push_back(record);
+        }
+        extra_record_vec_ = filtered;
+    }
+
+    const bool isCn = (APPMODEL()->CabinetLanguage() == zl::ELanguageType_Cn);
+
+    auto typeDisplay = [isCn](const QString &key) -> QString {
+        if (key == QStringLiteral("USB Port"))
+            return isCn ? QStringLiteral("USB 口") : key;
+        if (key == QStringLiteral("TF Card"))
+            return isCn ? QStringLiteral("TF 卡") : key;
+        if (key == QStringLiteral("Temp/Humidity (CN40)"))
+            return isCn ? QStringLiteral("温湿度 (CN40)") : key;
+        if (key == QStringLiteral("Backlight"))
+            return isCn ? QStringLiteral("背光调节") : key;
+        return key.isEmpty() ? QStringLiteral("-") : key;
+    };
+
+    auto funcAddItem = [&](const zl::RecordInfo& record)
+    {
+        QList<QStandardItem*> row;
+
+        QStandardItem* item_checkbox = new QStandardItem();
+        item_checkbox->setCheckable(true);
+        item_checkbox->setCheckState(Qt::Unchecked);
+        item_checkbox->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+        item_checkbox->setEditable(false);
+        row.append(item_checkbox);
+
+        QStandardItem* item_seq = new QStandardItem(record.record_id);
+        item_seq->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+        item_seq->setEditable(false);
+        row.append(item_seq);
+
+        QStandardItem* item_type = new QStandardItem(typeDisplay(record.cmd_ret_info));
+        item_type->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+        item_type->setEditable(false);
+        row.append(item_type);
+
+        const bool ok = (record.result_type == zl::EResultType_Success);
+        QString resultText = ok
+            ? (isCn ? QStringLiteral("成功") : QStringLiteral("Success"))
+            : (isCn ? QStringLiteral("测试失败") : QStringLiteral("Failed"));
+        if (ok && !record.result_info.trimmed().isEmpty()
+            && record.result_info != QStringLiteral("Success")
+            && record.result_info != QStringLiteral("成功"))
+            resultText = record.result_info;
+
+        QStandardItem* item_result = new QStandardItem(resultText);
+        item_result->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+        item_result->setEditable(false);
+        if (!ok)
+            item_result->setForeground(Qt::red);
+        row.append(item_result);
+
+        QStandardItem* item_time = new QStandardItem(record.test_time);
+        item_time->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+        row.append(item_time);
+
+        QStandardItem* item_op = new QStandardItem(isCn ? QStringLiteral("查看报告") : tr("View Report"));
+        item_op->setTextAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+        item_op->setBackground(QBrush(QColor(0, 95, 167)));
+        item_op->setForeground(Qt::white);
+        row.append(item_op);
+
+        model_extra_record_result_->appendRow(row);
+    };
+
+    TableHelper::readyUpdate(model_extra_record_result_, ui->tb_extra_record_result);
+
+    foreach(const zl::RecordInfo record, extra_record_vec_)
+    {
+        funcAddItem(record);
+    }
+
+    TableHelper::finishUpdate(model_extra_record_result_, ui->tb_extra_record_result);
+}
+
+void BackendWnd::on_btn_extra_record_export_excel_clicked()
+{
+    int rowCount = model_extra_record_result_ ? model_extra_record_result_->rowCount() : 0;
+    if (rowCount < 1)
+    {
+        MsgWnd::ShowNormalInfo(QObject::tr("Please query data first"));
+        return;
+    }
+
+    QList<int> selectedRows;
+    for (int i = 0; i < rowCount; ++i)
+    {
+        QStandardItem* cbItem = model_extra_record_result_->item(i, 0);
+        if (cbItem && cbItem->checkState() == Qt::Checked)
+            selectedRows.append(i);
+    }
+
+    if (selectedRows.isEmpty())
+    {
+        MsgWnd::ShowNormalInfo(QObject::tr("Please select records to export"));
+        return;
+    }
+
+    QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
+    QString defaultFileName = QString("extra_test_report_%1.csv").arg(timestamp);
+    QString fileName = QFileDialog::getSaveFileName(
+        this,
+        tr("Export Additional Test Report"),
+        QDir::homePath() + "/" + defaultFileName,
+        tr("CSV Files (*.csv);;All Files (*)")
+    );
+
+    if (fileName.isEmpty())
+        return;
+
+    QFile file(fileName);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        QMessageBox::warning(this, tr("Export Failed"), tr("Cannot create file: %1").arg(fileName));
+        return;
+    }
+
+    QTextStream out(&file);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    out.setEncoding(QStringConverter::Utf8);
+#else
+    out.setCodec("UTF-8");
+#endif
+
+    out << "\xEF\xBB\xBF";
+
+    auto csvEscape = [](const QString& text) -> QString {
+        QString escaped = text;
+        escaped.replace("\"", "\"\"");
+        return QString("\"%1\"").arg(escaped);
+    };
+
+    QStringList headers;
+    for (int col = 1; col <= 4; ++col)
+        headers.append(csvEscape(model_extra_record_result_->headerData(col, Qt::Horizontal).toString()));
+    out << headers.join(",") << "\n";
+
+    for (int row : selectedRows)
+    {
+        QStringList rowData;
+        for (int col = 1; col <= 4; ++col)
+            rowData.append(csvEscape(model_extra_record_result_->index(row, col).data().toString()));
+        out << rowData.join(",") << "\n";
+    }
+
+    file.close();
+    QMessageBox::information(this, tr("Export Success"), tr("Report exported successfully to: %1").arg(fileName));
+}
+
+void BackendWnd::on_btn_extra_record_reset_clicked()
+{
+    ui->combo_extra_record_type->setCurrentIndex(0);
+    ui->combo_extra_record_result->setCurrentIndex(0);
+    init_extra_page_time_select();
+}
+
+void BackendWnd::on_btn_extra_record_delete_clicked()
+{
+    QStringList record_list;
+    int rowCount = model_extra_record_result_->rowCount();
+    for (int i = 0; i < rowCount; ++i) {
+        QStandardItem* cbItem = model_extra_record_result_->item(i, 0);
+        if (cbItem && cbItem->checkState() == Qt::Checked) {
+            QStandardItem* seqItem = model_extra_record_result_->item(i, 1);
+            if (seqItem) record_list << seqItem->text();
+        }
+    }
+
+    if (record_list.isEmpty()) return;
+
+    pending_delete_records_ = record_list;
+    pending_delete_type_ = "extra";
+    MsgWnd::ShowDeleteConfirm(this);
+}
+
+void BackendWnd::on_tb_extra_record_result_doubleClicked(const QModelIndex& index)
+{
+    if (!index.isValid())
+        return;
+
+    QModelIndex recordIdIndex = model_extra_record_result_->index(index.row(), 1);
+    QString recordId = model_extra_record_result_->data(recordIdIndex).toString();
+
+    qDebug() << "[INFO] Double clicked Extra record, ID:" << recordId;
+
+    QString testLog;
+    QSqlQuery query = zl::CDBConnector::Instance()->CreateQuery();
+    query.prepare("SELECT TEST_LOG FROM T_RECORD WHERE RECORD_ID=:record_id");
+    query.bindValue(":record_id", recordId);
+    int32_t ret = zl::CDBConnector::Instance()->ExecQuery(query);
+    if (ret == zl::CDBConnector::EDBError_Success && query.next()) {
+        testLog = query.value("TEST_LOG").toString();
+    }
+
+    if (testLog.isEmpty()) {
+        foreach(const zl::RecordInfo& record, extra_record_vec_) {
+            if (record.record_id == recordId) {
+                testLog = record.test_log;
+                break;
+            }
+        }
+    }
+
+    if (testLog.isEmpty()) {
+        QMessageBox::warning(this, tr("Warning"), tr("No test log found for this record"));
+        return;
+    }
+
+    showTestReportDialog(recordId, testLog);
+}
+
+void BackendWnd::on_extra_header_checkbox_clicked(bool checked)
+{
+    if (!model_extra_record_result_) return;
+
+    int row_count = model_extra_record_result_->rowCount();
+    for (int i = 0; i < row_count; ++i) {
+        QStandardItem* item = model_extra_record_result_->item(i, 0);
+        if (item)
+            item->setCheckState(checked ? Qt::Checked : Qt::Unchecked);
     }
 }

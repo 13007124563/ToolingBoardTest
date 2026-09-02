@@ -75,7 +75,8 @@ enum ETestType {
     ETestType_Iot                = 1,
     ETestType_SimIot             = 2,
     ETestType_RomVer             = 3,
-    ETestType_Serial             = 4
+    ETestType_Serial             = 4,
+    ETestType_Extra              = 5   // 新增测试（RS232/USB/TF/温湿度/背光等）
 };
 
 /* result type */ // corresponding with CommandResultType
@@ -183,6 +184,7 @@ struct RecordInfo
     int32_t                         iot_test;
     int32_t                         simiot_test;
     int32_t                         serial_test;
+    int32_t                         extra_test;         // 新增测试标记
     QString                         test_time;          // 测试时间
     EResultType                     result_type;
     QString                         cmd_ret_info;       // 指令回应信息
@@ -209,6 +211,7 @@ struct RecordInfo
         iot_test = 0;
         simiot_test = 0;
         serial_test = 0;
+        extra_test = 0;
 
         test_time = "";
         result_type = EResultType_Unknow;

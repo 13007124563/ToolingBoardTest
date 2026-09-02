@@ -64,6 +64,8 @@ protected:
     void runBacklightTest();
     void applyRs232CrossTalkResult(QLineEdit *edit, const QString &logTag,
                                    const Rs232CrossTalkResult &r);
+    void saveExtraTestRecord(const QString &typeLabel, const QString &summary,
+                             const QString &detailLog, bool ok);
 
     QLineEdit* boardTestResultEdit(quint8 cmd) const;
     void clearBoardTestResultField(quint8 cmd);

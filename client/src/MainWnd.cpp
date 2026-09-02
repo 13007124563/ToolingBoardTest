@@ -446,6 +446,39 @@ void MainWnd::saveSerialTestRecord(quint8 cmd, const QString &summary, const QSt
              << "cmd:" << cmd << "result:" << int(resultType);
 }
 
+void MainWnd::saveExtraTestRecord(const QString &typeLabel, const QString &summary,
+                                  const QString &detailLog, bool ok)
+{
+    zl::RecordInfo record;
+    TestRecordManager::getInstance()->GetEmptyRecord(record);
+
+    const bool isCn = (APPMODEL()->CabinetLanguage() == zl::ELanguageType_Cn);
+    record.test_type = zl::ETestType_Extra;
+    record.extra_test = 1;
+    record.serial_test = 0;
+    record.sim_test = 0;
+    record.iot_test = 0;
+    record.simiot_test = 0;
+    record.result_type = ok ? zl::EResultType_Success : zl::EResultType_State_error;
+    record.cmd_ret_info = typeLabel;
+    record.result_info = ok
+        ? (summary.trimmed().isEmpty()
+               ? (isCn ? QStringLiteral("成功") : QStringLiteral("Success"))
+               : summary)
+        : (summary.trimmed().isEmpty()
+               ? (isCn ? QStringLiteral("测试失败") : QStringLiteral("Failed"))
+               : summary);
+    record.test_log = detailLog;
+
+    const int32_t ret = TestRecordManager::getInstance()->SaveTestRecord(record);
+    if (ret != zl::EResult_Success) {
+        qDebug() << "[ERROR] Failed to save extra test record:" << typeLabel;
+        return;
+    }
+    qDebug() << "[INFO] Extra test record saved, id:" << record.record_id
+             << "type:" << typeLabel << "ok:" << ok;
+}
+
 void MainWnd::resetSimInfo()
 {
     ui->lb_test_sim_network->clear();
@@ -2325,6 +2358,9 @@ void MainWnd::runRs232Cn35Cn36Test()
         Rs232PortTester::kBaudCn35Cn36,
         Rs232PortTester::kDefaultTimeoutMs);
     applyRs232CrossTalkResult(edit, QStringLiteral("RS232 CN35/CN36"), r);
+    saveExtraTestRecord(QStringLiteral("RS232 (CN35/CN36)"),
+                        r.ok ? r.summary : tr("Test failed"),
+                        r.detail, r.ok);
 }
 
 void MainWnd::runRs232Cn37Cn38Test()
@@ -2340,6 +2376,9 @@ void MainWnd::runRs232Cn37Cn38Test()
         Rs232PortTester::kBaudCn37Cn38,
         Rs232PortTester::kDefaultTimeoutMs);
     applyRs232CrossTalkResult(edit, QStringLiteral("RS232 CN37/CN38"), r);
+    saveExtraTestRecord(QStringLiteral("RS232 (CN37/CN38)"),
+                        r.ok ? r.summary : tr("Test failed"),
+                        r.detail, r.ok);
 }
 
 void MainWnd::runUsbPortTest()
@@ -2368,6 +2407,9 @@ void MainWnd::runUsbPortTest()
     } else {
         setLabelFailed(edit);
     }
+    saveExtraTestRecord(QStringLiteral("USB Port"),
+                        r.ok ? r.summary : tr("Test failed"),
+                        r.detail, r.ok);
 }
 
 void MainWnd::runTfCardTest()
@@ -2396,6 +2438,9 @@ void MainWnd::runTfCardTest()
     } else {
         setLabelFailed(edit);
     }
+    saveExtraTestRecord(QStringLiteral("TF Card"),
+                        r.ok ? r.summary : tr("Test failed"),
+                        r.detail, r.ok);
 }
 
 void MainWnd::runThCn40Test()
@@ -2424,6 +2469,9 @@ void MainWnd::runThCn40Test()
     } else {
         setLabelFailed(edit);
     }
+    saveExtraTestRecord(QStringLiteral("Temp/Humidity (CN40)"),
+                        r.ok ? r.summary : tr("Test failed"),
+                        r.detail, r.ok);
 }
 
 void MainWnd::runBacklightTest()
@@ -2451,6 +2499,9 @@ void MainWnd::runBacklightTest()
     } else {
         setLabelFailed(edit);
     }
+    saveExtraTestRecord(QStringLiteral("Backlight"),
+                        r.ok ? r.summary : tr("Test failed"),
+                        r.detail, r.ok);
 }
 
 void MainWnd::onSerialPortOpened(const QString &portName)

@@ -372,6 +372,22 @@
         <source>Query Serial Record Failed</source>
         <translation>Query Serial Record Failed</translation>
     </message>
+    <message>
+        <source>Additional Test</source>
+        <translation>Additional Test</translation>
+    </message>
+    <message>
+        <source>Test Type</source>
+        <translation>Test Type</translation>
+    </message>
+    <message>
+        <source>Query Additional Test Record Failed</source>
+        <translation>Query Additional Test Record Failed</translation>
+    </message>
+    <message>
+        <source>Export Additional Test Report</source>
+        <translation>Export Additional Test Report</translation>
+    </message>
         <message>
         <source>Test Result</source>
         <translation>Test Result</translation>

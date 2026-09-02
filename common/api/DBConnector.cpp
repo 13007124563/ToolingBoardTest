@@ -268,12 +268,14 @@ int CDBConnector::createTable()
     keyList.clear();
     valueList.clear();
     keyList << "ID" << "RECORD_ID" << "SIM_CARD_TYPE"
-            << "VER_TEST" << "SIM_TEST" << "IOT_TEST" << "SIMIOT_TEST" << "SERIAL_TEST" << "TEST_TIME" << "RESULT_TYPE" << "CMD_RET_INFO" << "RESULT_INFO" << "TEST_LOG"
+            << "VER_TEST" << "SIM_TEST" << "IOT_TEST" << "SIMIOT_TEST" << "SERIAL_TEST" << "EXTRA_TEST"
+            << "TEST_TIME" << "RESULT_TYPE" << "CMD_RET_INFO" << "RESULT_INFO" << "TEST_LOG"
             << "MODULE_TYPE" << "IOT_MODULE_ID" << "IOT_IMEI"
             << "ICCID" << "NET_STATUS" << "NETWORK_TYPE" << "SIGNAL_STRENGTH"
             << "VERSION";
     valueList << autoincrement << "varchar(100)" << "int(4)"
-              << "int(4)" << "int(4)" << "int(4)" << "int(4)" << "int(4)" << "DATETIME" << "int(4)" << "varchar(100)" << "varchar(300)" << "TEXT"
+              << "int(4)" << "int(4)" << "int(4)" << "int(4)" << "int(4)" << "int(4)"
+              << "DATETIME" << "int(4)" << "varchar(100)" << "varchar(300)" << "TEXT"
               << "varchar(20)" << "varchar(50)" << "varchar(50)"
               << "varchar(50)" << "int(4)" << "varchar(50)" << "varchar(50)"
               << "varchar(50)";

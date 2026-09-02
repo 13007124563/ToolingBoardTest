@@ -56,6 +56,8 @@ private:
     void init_iot_page_time_select();
     void init_serial_page_time_select();
     void init_serial_page_combo_normal();
+    void init_extra_page_time_select();
+    void init_extra_page_combo_normal();
 
     void init_sim_page_combo_normal();
     void init_sim_page_combo_completer();
@@ -89,13 +91,20 @@ protected slots:
     void on_btn_serial_record_reset_clicked();
     void on_btn_serial_record_delete_clicked();
 
+    void on_btn_extra_record_query_clicked();
+    void on_btn_extra_record_export_excel_clicked();
+    void on_btn_extra_record_reset_clicked();
+    void on_btn_extra_record_delete_clicked();
+
     void on_sim_header_checkbox_clicked(bool checked);
     void on_iot_header_checkbox_clicked(bool checked);
     void on_serial_header_checkbox_clicked(bool checked);
+    void on_extra_header_checkbox_clicked(bool checked);
 
     void on_tb_sim_record_result_doubleClicked(const QModelIndex &index);
     void on_tb_iot_record_result_doubleClicked(const QModelIndex &index);
     void on_tb_serial_record_result_doubleClicked(const QModelIndex &index);
+    void on_tb_extra_record_result_doubleClicked(const QModelIndex &index);
 
     void showTestReportDialog(const QString& recordId, const QString& testType);
 
@@ -119,10 +128,12 @@ private:
     QStandardItemModel*		model_sim_record_result_;
     QStandardItemModel*		model_iot_record_result_;
     QStandardItemModel*		model_serial_record_result_;
+    QStandardItemModel*		model_extra_record_result_;
 
     QCheckBox*              sim_header_checkbox_;       // SIM表头全选复选框
     QCheckBox*              iot_header_checkbox_;       // IOT表头全选复选框
     QCheckBox*              serial_header_checkbox_;    // 串口测试表头全选复选框
+    QCheckBox*              extra_header_checkbox_;     // 新增测试表头全选复选框
 
 
     QCompleter*             completer_sim_page_sim_iccid;
@@ -135,9 +146,10 @@ private:
     zl::RecordVec           sim_record_vec_;                 // 当前显示的sim卡测试记录
     zl::RecordVec           iot_record_vec_;                 // 当前显示的IOT测试记录
     zl::RecordVec           serial_record_vec_;              // 当前显示的串口测试记录
+    zl::RecordVec           extra_record_vec_;               // 当前显示的新增测试记录
 
     QStringList             pending_delete_records_;         // 待删除记录ID列表
-    QString                 pending_delete_type_;            // 待删除记录类型："sim" / "iot" / "serial"
+    QString                 pending_delete_type_;            // 待删除记录类型："sim" / "iot" / "serial" / "extra"
 };
 
 #endif // BACKENDWND_H

@@ -107,6 +107,22 @@
         <source>Query Serial Record Failed</source>
         <translation>查询串口测试记录失败</translation>
     </message>
+    <message>
+        <source>Additional Test</source>
+        <translation>新增测试</translation>
+    </message>
+    <message>
+        <source>Test Type</source>
+        <translation>测试类型</translation>
+    </message>
+    <message>
+        <source>Query Additional Test Record Failed</source>
+        <translation>查询新增测试记录失败</translation>
+    </message>
+    <message>
+        <source>Export Additional Test Report</source>
+        <translation>导出新增测试报告</translation>
+    </message>
         <message>
         <source>Test Result</source>
         <translation>测试结果</translation>
