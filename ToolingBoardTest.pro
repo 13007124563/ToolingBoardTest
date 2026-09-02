@@ -131,17 +131,44 @@ RESOURCES += \
 TRANSLATIONS += ToolingBoardTest_cn.ts \
                 ToolingBoardTest_en.ts
 
-# 构建前用 lrelease 生成资源目录下的 .qm（不改业务代码；翻译进 qrc）
-LRELEASE_BIN = $$[QT_INSTALL_BINS]/lrelease
-win32: LRELEASE_BIN = $$[QT_INSTALL_BINS]\\lrelease.exe
-cn_qm.target = $$PWD/client/res/ToolingBoardTest_cn.qm
-cn_qm.depends = $$PWD/ToolingBoardTest_cn.ts
-cn_qm.commands = $$quote($$LRELEASE_BIN) $$PWD/ToolingBoardTest_cn.ts -qm $$PWD/client/res/ToolingBoardTest_cn.qm
-en_qm.target = $$PWD/client/res/ToolingBoardTest_en.qm
-en_qm.depends = $$PWD/ToolingBoardTest_en.ts
-en_qm.commands = $$quote($$LRELEASE_BIN) $$PWD/ToolingBoardTest_en.ts -qm $$PWD/client/res/ToolingBoardTest_en.qm
-QMAKE_EXTRA_TARGETS += cn_qm en_qm
-PRE_TARGETDEPS += $$PWD/client/res/ToolingBoardTest_cn.qm $$PWD/client/res/ToolingBoardTest_en.qm
+# 构建前用 host 侧 lrelease 生成 .qm
+# 交叉编译时 $$[QT_INSTALL_BINS] 指向目标 sysroot，通常没有 lrelease（Error 127）
+qtPrepareTool(LRELEASE_BIN, lrelease)
+!isEmpty(LRELEASE_BIN):!exists($$LRELEASE_BIN): LRELEASE_BIN =
+isEmpty(LRELEASE_BIN): LRELEASE_BIN = $$(LRELEASE)
+!isEmpty(LRELEASE_BIN):!exists($$LRELEASE_BIN): LRELEASE_BIN =
+isEmpty(LRELEASE_BIN): LRELEASE_BIN = $$system(command -v lrelease 2>/dev/null)
+!isEmpty(LRELEASE_BIN):!exists($$LRELEASE_BIN): LRELEASE_BIN =
+isEmpty(LRELEASE_BIN) {
+    LRELEASE_BIN = $$[QT_HOST_BINS]/lrelease
+}
+win32 {
+    isEmpty(LRELEASE_BIN)|!exists($$LRELEASE_BIN) {
+        LRELEASE_BIN = $$[QT_HOST_BINS]\\lrelease.exe
+    }
+    isEmpty(LRELEASE_BIN)|!exists($$LRELEASE_BIN) {
+        LRELEASE_BIN = $$[QT_INSTALL_BINS]\\lrelease.exe
+    }
+}
+!isEmpty(LRELEASE_BIN):!exists($$LRELEASE_BIN): LRELEASE_BIN =
+
+!isEmpty(LRELEASE_BIN) {
+    cn_qm.target = $$PWD/client/res/ToolingBoardTest_cn.qm
+    cn_qm.depends = $$PWD/ToolingBoardTest_cn.ts
+    cn_qm.commands = $$quote($$LRELEASE_BIN) $$PWD/ToolingBoardTest_cn.ts -qm $$PWD/client/res/ToolingBoardTest_cn.qm
+    en_qm.target = $$PWD/client/res/ToolingBoardTest_en.qm
+    en_qm.depends = $$PWD/ToolingBoardTest_en.ts
+    en_qm.commands = $$quote($$LRELEASE_BIN) $$PWD/ToolingBoardTest_en.ts -qm $$PWD/client/res/ToolingBoardTest_en.qm
+    QMAKE_EXTRA_TARGETS += cn_qm en_qm
+    PRE_TARGETDEPS += $$PWD/client/res/ToolingBoardTest_cn.qm $$PWD/client/res/ToolingBoardTest_en.qm
+    message("Using lrelease: $$LRELEASE_BIN")
+} else {
+    exists($$PWD/client/res/ToolingBoardTest_cn.qm):exists($$PWD/client/res/ToolingBoardTest_en.qm) {
+        warning("lrelease not found; using existing client/res/*.qm")
+    } else {
+        error("lrelease not found and client/res/*.qm missing. Install host Qt Linguist tools, or set LRELEASE=/path/to/lrelease")
+    }
+}
 
 # Platform-specific libraries
 unix {

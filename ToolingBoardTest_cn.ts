@@ -1629,6 +1629,14 @@ Parsed content: %6</source>
         <source>Test timeout! Please check if the module type is correct.</source>
         <translation>测试超时！请检查模块类型是否正确。</translation>
     </message>
+    <message>
+        <source>[One-Click Test] All items passed</source>
+        <translation>[一键测试] 全部项目通过</translation>
+    </message>
+    <message>
+        <source>[One-Click Test] Failed items: %1</source>
+        <translation>[一键测试] 失败项目: %1</translation>
+    </message>
 </context>
 <context>
     <name>QObject</name>

@@ -148,7 +148,10 @@ protected:
     void proceedOneClickAfterIot();
     void startOneClickBoardQueries();
     void proceedOneClickNextQueryOrFinish();
-    void finishOneClickTest();
+    void finishOneClickTest(bool showSummary = false);
+    bool isOneClickResultFieldFailed(const QLineEdit *edit) const;
+    QStringList collectOneClickFailedItems() const;
+    void showOneClickTestSummary();
 
     enum class DualVoltageTestPhase {
         None,
@@ -257,6 +260,7 @@ private:
     int      m_spinAngle;               // 当前旋转角度
     bool     m_oneClickTestActive;      // 一键测试流程进行中
     bool     m_oneClickTestAwaitingQuery; // 一键测试等待串口查询回包
+    bool     m_oneClickAfterIotStarted; // 一键测试已进入 IOT 之后的后续步骤
     int      m_oneClickQueryIndex;      // 一键测试当前查询指令索引
 
     DualVoltageTestPhase m_dualVoltagePhase = DualVoltageTestPhase::None;

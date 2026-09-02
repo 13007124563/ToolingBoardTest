@@ -68,6 +68,8 @@ protected slots:
 
 private:
     void showTopleftQuitBtn(bool show);
+    void resetNormalTipStyles();
+    void applyMultilineNormalTip2(const QString &text);
 
     void showNormal(QString info1, QString info2, QString info3);
 

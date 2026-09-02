@@ -8,6 +8,7 @@
 #include <QTimer>
 #include <QEvent>
 #include <QPainter>
+#include <QLabel>
 
 #include "GlobalSignal.h"
 
@@ -231,11 +232,70 @@ bool MsgWnd::eventFilter(QObject * watched, QEvent * event)
     return QWidget::eventFilter(watched, event);
 }
 
+void MsgWnd::resetNormalTipStyles()
+{
+    // 恢复默认单行样式（与 MsgWnd.ui 中 tip 高度一致）
+    auto resetTip = [](QLabel *lab) {
+        if (!lab)
+            return;
+        lab->setMinimumHeight(60);
+        lab->setMaximumHeight(60);
+        lab->setWordWrap(false);
+        lab->setAlignment(Qt::AlignCenter);
+        lab->setTextFormat(Qt::PlainText);
+        lab->setStyleSheet(QString());
+    };
+    resetTip(ui->lb_normal_tip1);
+    resetTip(ui->lb_normal_tip2);
+    resetTip(ui->lb_normal_tip3);
+}
+
+void MsgWnd::applyMultilineNormalTip2(const QString &text)
+{
+    // tip2 默认最大高度仅 60，多行/多列失败项会被裁切；按可见行数缩字号并抬高区域
+    const bool isHtml = text.contains(QStringLiteral("<table"), Qt::CaseInsensitive);
+    int lines = 1;
+    if (isHtml) {
+        lines = qMax(1, text.count(QStringLiteral("<tr"), Qt::CaseInsensitive));
+    } else {
+        lines = qMax(1, text.count(QLatin1Char('\n')) + 1);
+    }
+
+    int pt = 13;
+    if (lines > 8)
+        pt = 12;
+    if (lines > 10)
+        pt = 11;
+    if (lines > 12)
+        pt = 10;
+    if (lines > 14)
+        pt = 9;
+
+    ui->lb_normal_tip1->setMinimumHeight(36);
+    ui->lb_normal_tip1->setMaximumHeight(44);
+    ui->lb_normal_tip1->setStyleSheet(
+        QStringLiteral("font: 75 %1pt \"微软雅黑\"; color:#333333;").arg(18));
+
+    ui->lb_normal_tip2->setMinimumHeight(0);
+    // 避免与底部「确定」按钮重叠
+    ui->lb_normal_tip2->setMaximumHeight(300);
+    ui->lb_normal_tip2->setWordWrap(true);
+    ui->lb_normal_tip2->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
+    ui->lb_normal_tip2->setTextFormat(isHtml ? Qt::RichText : Qt::PlainText);
+    ui->lb_normal_tip2->setStyleSheet(
+        QStringLiteral("font: %1pt \"微软雅黑\"; color:#333333;").arg(pt));
+
+    // 多行/多列列表占用 tip2，隐藏 tip3 腾出垂直空间
+    ui->lb_normal_tip3->setVisible(false);
+    ui->lb_normal_tip3->clear();
+}
+
 void MsgWnd::resetContent(bool flag)
 {
     ui->lb_normal_tip1->clear();
     ui->lb_normal_tip2->clear();
     ui->lb_normal_tip3->clear();
+    resetNormalTipStyles();
 
     showTopleftQuitBtn(false);
     show_timer(false);
@@ -252,8 +312,17 @@ void MsgWnd::resetContent(bool flag)
         ui->lb_normal_tip3->setVisible(!content3_.isEmpty());
 
         ui->lb_normal_tip1->setText(content1_);
-        ui->lb_normal_tip2->setText(content2_);
-        ui->lb_normal_tip3->setText(content3_);
+        const bool multi = content2_.contains(QLatin1Char('\n'))
+            || content2_.contains(QStringLiteral("<table"), Qt::CaseInsensitive);
+        if (multi) {
+            applyMultilineNormalTip2(content2_);
+            ui->lb_normal_tip2->setText(content2_);
+            ui->lb_normal_tip3->setVisible(false);
+        } else {
+            ui->lb_normal_tip2->setTextFormat(Qt::PlainText);
+            ui->lb_normal_tip2->setText(content2_);
+            ui->lb_normal_tip3->setText(content3_);
+        }
     }
         break;
     case EMsgBoxType_Confirm:
