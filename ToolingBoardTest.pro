@@ -78,6 +78,7 @@ SOURCES += \
     common/api/UsbPortTester.cpp \
     common/api/TfCardTester.cpp \
     common/api/ThCn40Tester.cpp \
+    common/api/BacklightTester.cpp \
     common/api/protocol/modbuscrc.cpp \
     common/api/protocol/protocolframe.cpp \
     common/api/protocol/responseparser.cpp \
@@ -108,6 +109,7 @@ HEADERS += \
     common/api/UsbPortTester.h \
     common/api/TfCardTester.h \
     common/api/ThCn40Tester.h \
+    common/api/BacklightTester.h \
     common/api/protocol/modbuscrc.h \
     common/api/protocol/protocolconstants.h \
     common/api/protocol/protocolframe.h \

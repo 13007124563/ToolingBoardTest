@@ -26,6 +26,7 @@
 #include "UsbPortTester.h"
 #include "TfCardTester.h"
 #include "ThCn40Tester.h"
+#include "BacklightTester.h"
 
 #include <QProcess>
 #include <QFile>
@@ -339,6 +340,7 @@ void MainWnd::resetExtraTestResults()
         ui->lb_test_th_cn40,
         ui->lb_test_usb,
         ui->lb_test_tf,
+        ui->lb_test_backlight,
     };
     for (QLineEdit *edit : edits) {
         edit->clear();
@@ -2199,17 +2201,19 @@ void MainWnd::runExtraTests()
         bool isUsb;
         bool isTf;
         bool isThCn40;
+        bool isBacklight;
     };
     const ExtraItem items[] = {
         // 暂不测：网口 CN3 / CAN 口 CN27
         // { ui->lb_test_eth_cn3,       QT_TR_NOOP("Network Port (CN3)"),     false, false, false, false, false, false },
         // { ui->lb_test_can_cn27,      QT_TR_NOOP("CAN Port (CN27)"),        true,  false, false, false, false, false },
-        { ui->lb_test_rs232_cn35_36, QT_TR_NOOP("RS232 (CN35/CN36)"),      false, true,  false, false, false, false },
-        { ui->lb_test_rs232_cn37_38, QT_TR_NOOP("RS232 (CN37/CN38)"),      false, false, true,  false, false, false },
-        { ui->lb_test_usb,           QT_TR_NOOP("USB Port"),               false, false, false, true,  false, false },
-        { ui->lb_test_tf,            QT_TR_NOOP("TF Card"),                false, false, false, false, true,  false },
-        { ui->lb_test_th_cn40,       QT_TR_NOOP("Temp/Humidity (CN40)"),   false, false, false, false, false, true  },
-        // { ui->lb_test_light_cn44,    QT_TR_NOOP("Light Sensor (CN44)"),    false, false, false, false, false, false },
+        { ui->lb_test_rs232_cn35_36, QT_TR_NOOP("RS232 (CN35/CN36)"),      false, true,  false, false, false, false, false },
+        { ui->lb_test_rs232_cn37_38, QT_TR_NOOP("RS232 (CN37/CN38)"),      false, false, true,  false, false, false, false },
+        { ui->lb_test_usb,           QT_TR_NOOP("USB Port"),               false, false, false, true,  false, false, false },
+        { ui->lb_test_tf,            QT_TR_NOOP("TF Card"),                false, false, false, false, true,  false, false },
+        { ui->lb_test_th_cn40,       QT_TR_NOOP("Temp/Humidity (CN40)"),   false, false, false, false, false, true,  false },
+        { ui->lb_test_backlight,     QT_TR_NOOP("Backlight"),              false, false, false, false, false, false, true  },
+        // { ui->lb_test_light_cn44,    QT_TR_NOOP("Light Sensor (CN44)"),    false, false, false, false, false, false, false },
     };
 
     for (const ExtraItem &item : items) {
@@ -2239,6 +2243,10 @@ void MainWnd::runExtraTests()
         }
         if (item.isThCn40) {
             runThCn40Test();
+            continue;
+        }
+        if (item.isBacklight) {
+            runBacklightTest();
             continue;
         }
 
@@ -2408,6 +2416,33 @@ void MainWnd::runThCn40Test()
         for (const QString &line : lines)
             ui->lb_test_cmd_excute_return_msg->appendPlainText(
                 tr("[CN40] %1").arg(line));
+    }
+
+    if (r.ok) {
+        edit->setStyleSheet("");
+        edit->setText(tr("%1 (OK)").arg(r.summary));
+    } else {
+        setLabelFailed(edit);
+    }
+}
+
+void MainWnd::runBacklightTest()
+{
+    QLineEdit *edit = ui->lb_test_backlight;
+    edit->setStyleSheet("");
+    edit->clear();
+
+    const BacklightTestResult r = BacklightTester::runGradient();
+
+    if (!r.detail.trimmed().isEmpty()) {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+        const QStringList lines = r.detail.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+#else
+        const QStringList lines = r.detail.split(QLatin1Char('\n'), QString::SkipEmptyParts);
+#endif
+        for (const QString &line : lines)
+            ui->lb_test_cmd_excute_return_msg->appendPlainText(
+                tr("[Backlight] %1").arg(line));
     }
 
     if (r.ok) {

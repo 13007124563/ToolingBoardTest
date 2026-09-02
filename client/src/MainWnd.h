@@ -61,6 +61,7 @@ protected:
     void runUsbPortTest();
     void runTfCardTest();
     void runThCn40Test();
+    void runBacklightTest();
     void applyRs232CrossTalkResult(QLineEdit *edit, const QString &logTag,
                                    const Rs232CrossTalkResult &r);
 

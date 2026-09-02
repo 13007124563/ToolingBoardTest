@@ -969,6 +969,10 @@
         <translation>TF 卡:</translation>
     </message>
     <message>
+        <source>Backlight:</source>
+        <translation>背光调节:</translation>
+    </message>
+    <message>
         <source>Network Port (CN3)</source>
         <translation>网口 CN3</translation>
     </message>
@@ -1001,6 +1005,10 @@
         <translation>TF 卡</translation>
     </message>
     <message>
+        <source>Backlight</source>
+        <translation>背光调节</translation>
+    </message>
+    <message>
         <source>[Additional Test] Start</source>
         <translation>[新增测试] 开始</translation>
     </message>
@@ -1031,6 +1039,38 @@
     <message>
         <source>[CN40] %1</source>
         <translation>[CN40] %1</translation>
+    </message>
+    <message>
+        <source>[Backlight] %1</source>
+        <translation>[背光] %1</translation>
+    </message>
+    <message>
+        <source>Backlight Test</source>
+        <translation>背光测试</translation>
+    </message>
+    <message>
+        <source>Did you observe backlight change?</source>
+        <translation>是否观察到背光变化？</translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <translation>是</translation>
+    </message>
+    <message>
+        <source>No</source>
+        <translation>否</translation>
+    </message>
+    <message>
+        <source>Backlight OK</source>
+        <translation>背光 OK</translation>
+    </message>
+    <message>
+        <source>[Backlight] User confirmed: pass</source>
+        <translation>[背光] 用户确认：通过</translation>
+    </message>
+    <message>
+        <source>[Backlight] User confirmed: fail</source>
+        <translation>[背光] 用户确认：失败</translation>
     </message>
     <message>
         <source>%1 (OK)</source>

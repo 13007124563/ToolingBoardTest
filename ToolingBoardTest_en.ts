@@ -1186,6 +1186,14 @@
         <translation>TF Card</translation>
     </message>
     <message>
+        <source>Backlight:</source>
+        <translation>Backlight:</translation>
+    </message>
+    <message>
+        <source>Backlight</source>
+        <translation>Backlight</translation>
+    </message>
+    <message>
         <source>[USB] %1</source>
         <translation>[USB] %1</translation>
     </message>
@@ -1196,6 +1204,38 @@
     <message>
         <source>[CN40] %1</source>
         <translation>[CN40] %1</translation>
+    </message>
+    <message>
+        <source>[Backlight] %1</source>
+        <translation>[Backlight] %1</translation>
+    </message>
+    <message>
+        <source>Backlight Test</source>
+        <translation>Backlight Test</translation>
+    </message>
+    <message>
+        <source>Did you observe backlight change?</source>
+        <translation>Did you observe backlight change?</translation>
+    </message>
+    <message>
+        <source>Yes</source>
+        <translation>Yes</translation>
+    </message>
+    <message>
+        <source>No</source>
+        <translation>No</translation>
+    </message>
+    <message>
+        <source>Backlight OK</source>
+        <translation>Backlight OK</translation>
+    </message>
+    <message>
+        <source>[Backlight] User confirmed: pass</source>
+        <translation>[Backlight] User confirmed: pass</translation>
+    </message>
+    <message>
+        <source>[Backlight] User confirmed: fail</source>
+        <translation>[Backlight] User confirmed: fail</translation>
     </message>
     <message>
         <source>[Additional Test] Start</source>
