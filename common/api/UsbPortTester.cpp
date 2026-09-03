@@ -97,8 +97,9 @@ UsbHostTestResult UsbPortTester::testHost()
         return result;
     }
 
-    // 枚举 USB 块设备（U 盘）：/sys/block/sdX 的 device 软链经过 usb
-    QStringList storageDevs;
+    // 仅识别 U 盘：USB 总线下的块设备，且 removable=1
+    QStringList usbSticks;
+    QStringList nonRemovableUsbStorage;
     QDir blockDir(QStringLiteral("/sys/block"));
     const QStringList blocks = blockDir.entryList(QStringList() << QStringLiteral("sd*"),
                                                   QDir::Dirs | QDir::NoDotAndDotDot);
@@ -108,13 +109,20 @@ UsbHostTestResult UsbPortTester::testHost()
         if (!fi.exists())
             continue;
         const QString resolved = fi.canonicalFilePath();
-        if (resolved.contains(QStringLiteral("/usb"))) {
-            storageDevs << blk;
-            result.detail += QStringLiteral("USB storage block: /dev/%1 (%2)\n")
-                                 .arg(blk, resolved);
-        }
+        if (!resolved.contains(QStringLiteral("/usb")))
+            continue;
+
+        const QString removable = readSysfsTrimmed(
+            QStringLiteral("/sys/block/%1/removable").arg(blk));
+        result.detail += QStringLiteral("USB storage block: /dev/%1 removable=%2 (%3)\n")
+                             .arg(blk, removable.isEmpty() ? QStringLiteral("?") : removable, resolved);
+
+        if (removable == QStringLiteral("1"))
+            usbSticks << blk;
+        else
+            nonRemovableUsbStorage << blk;
     }
-    if (storageDevs.isEmpty())
+    if (usbSticks.isEmpty() && nonRemovableUsbStorage.isEmpty())
         result.detail += QStringLiteral("USB storage block: (none)\n");
 
     // 可选：追加 lsusb 输出便于现场对照
@@ -130,24 +138,31 @@ UsbHostTestResult UsbPortTester::testHost()
         }
     }
 
-    if (peripherals.isEmpty()) {
-        result.summary = QStringLiteral("USB FAIL (no peripheral)");
-        result.detail += QStringLiteral(
-            "No external USB device enumerated. Plug a USB stick (or any device) and retry.\n");
+    if (usbSticks.isEmpty()) {
+        result.ok = false;
+        if (!nonRemovableUsbStorage.isEmpty()) {
+            result.summary = QStringLiteral("USB FAIL (not a USB stick)");
+            result.detail += QStringLiteral(
+                "Found USB storage (%1) but removable!=1 (likely USB HDD/other). "
+                "Only USB flash drive (U盘) counts as PASS.\n")
+                                 .arg(nonRemovableUsbStorage.join(QLatin1Char(',')));
+        } else if (!peripherals.isEmpty()) {
+            result.summary = QStringLiteral("USB FAIL (no USB stick)");
+            result.detail += QStringLiteral(
+                "USB peripheral enumerated, but no removable USB mass-storage (/dev/sd* removable=1). "
+                "Please plug a USB flash drive (U盘) and retry.\n");
+        } else {
+            result.summary = QStringLiteral("USB FAIL (no USB stick)");
+            result.detail += QStringLiteral(
+                "No USB flash drive detected. Please plug a U盘 into the USB Host port and retry.\n");
+        }
+        result.detail += QStringLiteral("Result: FAIL\n");
         return result;
     }
 
     result.ok = true;
-    if (!storageDevs.isEmpty()) {
-        result.summary = QStringLiteral("USB OK (%1 device, %2)")
-                             .arg(peripherals.size())
-                             .arg(storageDevs.join(QLatin1Char(',')));
-    } else {
-        result.summary = QStringLiteral("USB OK (%1 device)").arg(peripherals.size());
-        result.detail += QStringLiteral(
-            "Note: peripheral found but no USB mass-storage block. Stick may be unformatted.\n");
-    }
-    result.detail += QStringLiteral("Result: PASS\n");
+    result.summary = QStringLiteral("USB OK (U盘 %1)").arg(usbSticks.join(QLatin1Char(',')));
+    result.detail += QStringLiteral("Result: PASS (USB stick detected)\n");
     return result;
 #endif
 }

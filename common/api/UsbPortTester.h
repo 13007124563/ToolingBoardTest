@@ -3,19 +3,18 @@
 
 #include <QString>
 
-/** USB Host 功能测试结果（插 U 盘/外设后检测枚举与存储）。 */
+/** USB Host 功能测试结果（仅识别 U 盘）。 */
 struct UsbHostTestResult {
     bool ok = false;
-    QString summary; // 如 USB OK (1 device, sdX)
+    QString summary; // 如 USB OK (sda)
     QString detail;  // 过程日志
 };
 
 /**
  * 开发板 USB Host 口功能检测：
  * 1) USB 控制器/根 Hub 是否存在
- * 2) 是否枚举到至少一个外设（非根 Hub）
- * 3) 若存在 USB 块设备（/dev/sd*）则记入结果（推荐插 U 盘）
- * 通过条件：控制器正常且至少有 1 个外设。
+ * 2) 是否枚举到 USB 大容量存储块设备（/dev/sd*，且 removable=1）
+ * 通过条件：仅当识别到 U 盘时成功；其它 USB 外设不算通过。
  */
 class UsbPortTester
 {
