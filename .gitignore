@@ -26,6 +26,7 @@ doc/*.md
 .vscode/
 build/
 .cursor
+ToolingBoardTest_arm64_package/
 
 # 忽略 deb 打包输出（build_deb.sh 生成）
 dist/
