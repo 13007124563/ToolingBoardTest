@@ -2547,7 +2547,7 @@ void MainWnd::runUsbPortTest()
     edit->setStyleSheet("");
     edit->clear();
 
-    // 测试前请在开发板 USB Host 口插入 U 盘（必须出现 /dev/sd* 块设备）
+    // 测试前请在开发板 2 个 USB Host 口各插入一只 U 盘（均需 /dev/sd* 且 removable=1）
     const UsbHostTestResult r = UsbPortTester::testHost();
 
     if (!r.detail.trimmed().isEmpty()) {
