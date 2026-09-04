@@ -6,15 +6,21 @@
 /** USB Host 功能测试结果（双口均需识别到 U 盘）。 */
 struct UsbHostTestResult {
     bool ok = false;
-    QString summary; // 如 USB OK (2 ports: sda@usb1/1-1, sdb@usb1/1-2)
+    QString summary; // 如 USB OK (2 ports: ...)
     QString detail;  // 过程日志
 };
 
 /**
  * 开发板 USB Host 口功能检测：
  * 1) USB 控制器/根 Hub 是否存在
- * 2) 板载 2 个 USB 口均需插入 U 盘（removable=1 的 USB 块设备，且分属不同物理口）
- * 通过条件：至少 2 个不同物理 USB 口各检测到 1 个 U 盘；只插 1 个口算失败。
+ * 2) 板载 2 个 USB 口均需插入 U 盘
+ *
+ * U 盘判定（满足其一即可）：
+ * - USB Mass Storage 接口（bInterfaceClass=08）
+ * - 或 USB 总线上的可移动块设备（/dev/sd* 且 removable=1）
+ *
+ * 物理口键按板载口计数（如 usb1/1-1.1、usb1/1-1.2）。
+ * 外部分线/Hub 更深层级会归并回板载口，避免单口一分二误判为双口通过。
  */
 class UsbPortTester
 {
