@@ -550,10 +550,10 @@ run_full_test() {
 }
 
 # ===================== 拨号专用函数 =====================
-# 等待AT端口可用（最多20次重试）
+# 等待AT端口可用（最多8次重试）
 wait_ecm_interface() {
     log "INFO" "等待AT端口 $AT_PORT 加载完成..."
-    local MAX_RETRY=20
+    local MAX_RETRY=8
     local WAIT_INTERVAL=5
     local RETRY_COUNT=0
     local BASIC_RESP=""
